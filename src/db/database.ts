@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { MatchEvent, MetaRow, OutboxItem, PersonRecord, SiteId, Suggestion } from '../types';
+import type { AppNotification, MatchEvent, MetaRow, OutboxItem, PersonRecord, SiteId, Suggestion } from '../types';
 
 /** Local data for one site. Each site gets its own IndexedDB database. */
 export class SiteDatabase extends Dexie {
@@ -8,6 +8,7 @@ export class SiteDatabase extends Dexie {
   events!: Table<MatchEvent, string>;
   suggestions!: Table<Suggestion, string>;
   meta!: Table<MetaRow, string>;
+  notifications!: Table<AppNotification, string>;
 
   constructor(site: SiteId) {
     super(`Reunite-${site}`);
@@ -18,6 +19,7 @@ export class SiteDatabase extends Dexie {
       suggestions: '&id, found_id, seeking_id, score',
       meta: '&key'
     });
+    this.version(2).stores({ notifications: '&id, created_at, seen, toasted' });
   }
 }
 

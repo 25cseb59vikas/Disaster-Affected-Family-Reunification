@@ -4,6 +4,7 @@ export type ScreenId =
   | 'register_speak'
   | 'verify_details'
   | 'saved'
+  | 'notifications'
   | 'suggested_matches'
   | 'match_review'
   | 'search_records'
@@ -83,6 +84,17 @@ export interface Suggestion {
   unknown: string[];
   ask_next: string | null;
   nameless?: boolean; // found record has no name: matched on description only
+}
+
+/** Something the volunteer at this site should look at. seen/toasted are 0/1 so they can be indexed. */
+export interface AppNotification {
+  id: string; // e.g. "match:<pair>", "confirm:<event id>", "verified:<pair>"
+  kind: 'match' | 'confirm' | 'verified';
+  suggestion_id: string;
+  text: string;
+  created_at: string;
+  seen: 0 | 1;
+  toasted: 0 | 1;
 }
 
 export interface MetaRow {

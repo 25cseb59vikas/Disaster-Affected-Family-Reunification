@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -32,6 +32,11 @@ export const SuggestedMatchesScreen: React.FC = () => {
     },
     [db]
   );
+
+  // Viewing the list clears the unseen badge.
+  useEffect(() => {
+    db.notifications.where('seen').equals(0).modify({ seen: 1 });
+  }, [db, data]);
 
   const items = (data?.suggestions ?? [])
     .map(s => ({ s, state: pairState(data!.events.get(s.id) ?? []) }))

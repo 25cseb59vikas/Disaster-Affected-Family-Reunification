@@ -5,6 +5,8 @@ import { RegisterChooseTypeScreen } from './screens/RegisterChooseTypeScreen';
 import { RegisterSpeakScreen } from './screens/RegisterSpeakScreen';
 import { VerifyDetailsScreen } from './screens/VerifyDetailsScreen';
 import { SavedScreen } from './screens/SavedScreen';
+import { NotificationsScreen } from './screens/NotificationsScreen';
+import { NotificationToast } from './components/Notifications';
 import { SuggestedMatchesScreen } from './screens/SuggestedMatchesScreen';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
 import { SearchRecordsScreen } from './screens/SearchRecordsScreen';
@@ -26,6 +28,8 @@ export const AppContent: React.FC = () => {
         return <VerifyDetailsScreen />;
       case 'saved':
         return <SavedScreen />;
+      case 'notifications':
+        return <NotificationsScreen />;
       case 'suggested_matches':
         return <SuggestedMatchesScreen />;
       case 'match_review':
@@ -42,6 +46,7 @@ export const AppContent: React.FC = () => {
   return (
     <>
       {renderScreen()}
+      {currentScreen !== 'choose_site' && <NotificationToast />}
       {import.meta.env.DEV && <DebugScreenJump current={currentScreen} onJump={navigateTo} />}
     </>
   );
