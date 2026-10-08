@@ -1,125 +1,61 @@
-# Reunite Relief — Disaster Family Reunification App
+# Reunite
 
-An offline-first, Progressive Web Application (PWA) built with **Dexie.js (IndexedDB)**, **React**, **TypeScript**, and **Tailwind CSS**, faithfully reproducing the **Disaster Family Reunification App** prototype from Stitch (`projects/13183460208011111487`).
+Offline-first family reunification after a disaster. React, TypeScript, Tailwind and Dexie (IndexedDB) in the
+browser; a local FastAPI server for voice intake, sync between sites, matching and the family status page.
 
----
+**Demo only. Use fictional information.** There is no staff login, and device storage is not encrypted.
 
-## 🏛️ Design Philosophy: Institutional Humanism
+## One app, three ways in
 
-Engineered for crisis response, disaster relief, and civil protection contexts where users experience high stress, adverse field weather, power outages, and fragmented attention.
+The first screen asks **"How are you using Reunite?"** and the device remembers the answer
+("Change how you use Reunite" goes back to it).
 
-- **Arm's Length Readability**: Minimum text floor of 18px, body copy at 20px, titles at 28px bold.
-- **Color Tokens**:
-  - **Base Canvas**: `#F6F3EC` (Warm off-white, low-glare under harsh field sunlight)
-  - **Surface Cards**: `#FFFDF8` (Soft parchment white with 1px `#D9DEE4` border and 12px radius)
-  - **Primary Ink**: `#0F1B2D` (Deep navy ink tone providing WCAG AAA contrast)
-  - **Primary Action**: `#C2540F` (Warm terracotta orange)
-  - **Operational Status Tokens**:
-    - **Verified / Safe**: Text `#2E7D5B`, Background `#E8F5E9`, Border `#A3D9C0`
-    - **Pending / Possible Match**: Text `#B7791F`, Background `#FEF3C7`, Border `#FCD34D`
-    - **Urgent / High Priority**: Text `#B3261E`, Background `#FEE2E2`, Border `#FCA5A5`
-- **Strict Touch Target**: Minimum 48px to 56px interactive target zones.
-- **Strict Left Alignment**: Predictable eye travel without decorative visual noise.
+| Who | Where | What |
+|---|---|---|
+| Camp or hospital volunteer | `/` | Choose the site (Camp A or Hospital B), register people by voice or typing with a photo, review suggested matches (evidence For / Against / Unknown / Ask next), confirm at both sites, then the family check. Search, Priority and notifications. |
+| Authority console | `/console` | All sites at once, desktop first: overview per site with link status, match queue with evidence beside it and **Accept** / **Reject** (reason required), priority cases, searchable records, registration at the authority desk, and a "Load fictional demo family" helper. |
+| Family member | `/family` | Report a missing person (phone and relationship required), check status by reference code, get help, or call the voice line instead (`/phone`). Sends reports only; never downloads anyone else's records. |
 
----
+Other pages: `/status?code=…` (public status by code) and `/phone` (simulated phone line, demo).
 
-## 📱 Complete 9-Screen Workflow
+How a match is verified: officers at **both** sites confirm, then the family answers a question about a private
+detail recorded with the found person. The authority console can accept a match and run the family check, but its
+acceptance never replaces either site's confirmation. Every decision is an event that syncs like a record.
 
-1. **Screen 1: Choose Site (`choose_site`)**
-   - Field site & organization selection ("Organization A" vs "Organization B").
-   - Volunteer name entry (`Sundaram`).
-   - Clean 56px primary "Continue" button.
+From 1024 px wide the field app uses a side navigation, grids for lists and two columns for Verify and the
+evidence screen; on phones it is a single column with bottom navigation. "Add photo" uses the rear camera on phones
+and offers the webcam or a file upload on desktops. "Describe clothing from the photo" asks a local vision model
+(see below) and marks the result "Please check".
 
-2. **Screen 2: Register – Choose Type (`register_choose_type`)**
-   - Persistent top bar showing active camp, volunteer name, and offline sync strip (`Offline · 12 waiting to sync`).
-   - Two large tappable cards: **"Person found here"** vs **"Looking for someone"**.
-   - Bottom navigation (Register, Search, Matches, Priority).
+## Running
 
-3. **Screen 3: Register – Speak (`register_speak`)**
-   - 160px round microphone action button with recording pulse animation and live timer (`0:08 · Tap to stop`).
-   - Contextual voice prompt guide: *"Say: name, age, village, father's name, what they are wearing"*.
-   - Alternative *"Type instead"* direct link.
-
-4. **Screen 4: Verify Details (`verify_details`)**
-   - Grey box showing spoken transcript extraction.
-   - Large editable single-column form fields:
-     - Name, Gender chips (`[Male]`, `[Female]`, `[Other]`), Age band chips (`[Under 12]`, `[12–18]`, `[19–59]`, `[60+]`).
-     - Village, Father's/spouse's name with system unsure indicator (amber border and `"Please check"` tag).
-     - Clothing & marks description, Add photo button.
-     - Family missing check toggle (`[Yes]`, `[No]`).
-   - "Save" button committing directly to Dexie.js IndexedDB and updating the offline sync queue.
-
-5. **Screen 5: Suggested Matches (`suggested_matches`)**
-   - Side-by-side found person and searched person photo cards.
-   - Match confidence score badge (e.g. `87% Strong match`, `72% Possible match`).
-   - Phonetic and location similarity breakdown with tick marks.
-   - "Review" button and "Not the same person" dismissal link.
-
-6. **Screen 6: Match Review (`match_review`)**
-   - Detailed comparison card.
-   - 3-Step Verification Stepper:
-     1. *Officer here confirms* (Done)
-     2. *Officer at other site confirms* (Current)
-     3. *Family answers a question* (Locked)
-   - "Confirm Officer Check" primary action button.
-   - "Flag an issue" secondary action.
-   - Privacy guarantee: *"Location is shown after all three steps."*
-
-7. **Screen 7: Family Status Portal (`family_status_portal`)**
-   - Public-facing QR portal screen for anxious family members.
-   - English & Tamil language toggle (`English | தமிழ்`).
-   - Large bilingual status sentence:
-     *"A possible match is being checked."* / *"சாத்தியமான பொருத்தம் சரிபார்க்கப்படுகிறது."*
-   - Person being searched for (`Selvi Rajesh (~28 yrs)`).
-   - Emergency hotline button: **"Call Helpline: 1077"**.
-   - Nearest Help Desk card (`Desk 3, Camp A – Govt. High School`, `Open 24 hours`).
-
-8. **Screen 8: Search Records (`search_records`)**
-   - Real-time Dexie.js search across names, villages, and relative names.
-   - Result cards displaying thumbnail, Age, Village, Camp, and status badge (`Possible match`, `Registered`, `Reunited`).
-   - Direct tap navigates into Match Review.
-
-9. **Screen 9: Priority Cases (`priority_cases`)**
-   - Top triage counter: **312 Registered**, **48 Searching**, **186 Reunited**.
-   - High-priority case list with bold reasons:
-     - *Aravind* (`Child alone` in bold red)
-     - *Unknown Male* (`Not identified` in bold amber)
-     - *Lakshmi Narayanan* (`No match after 24 hours` in bold navy)
-   - 56px "Open" button for instant case triage.
-
----
-
-## ⚡ Offline-First Architecture (Dexie.js & PWA)
-
-- **Dexie.js (IndexedDB)**:
-  - Local database `ReuniteReliefDB` stores `records`, `matches`, and `sites`.
-  - Full CRUD operations run without network connectivity.
-  - Automatic offline queue counter (`offlineCount`) with simulated multi-site cloud synchronization.
-- **Service Worker (`public/sw.js`)**:
-  - Pre-caches core app shell and assets for 100% offline access in disaster zones.
-- **Web App Manifest (`public/manifest.json`)**:
-  - Fullscreen standalone PWA support on iOS and Android.
-
----
-
-## 🚀 Running the Application
-
-### Development Server
 ```bash
-cmd /c npm run dev
+npm install
+npm run dev          # https://localhost:3000 (self-signed certificate; needed for the microphone on phones)
+npm run dev:http     # http://localhost:3001 (for testing offline use and installing; see below)
+npm run build        # production build into dist/
+npm run preview:http # serve the build at http://localhost:4174
 ```
 
-### Production Build
-```bash
-cmd /c npm run build
-```
+The front end reaches the server through `/api` on the same address (Vite proxy to `http://127.0.0.1:8000`).
 
-### Preview Production Build
-```bash
-cmd /c npm run preview
-```
+## Install as an app, and offline use
 
----
+The app is a PWA: `public/manifest.json` (name Reunite, standalone, icons in `public/icons/`) and `public/sw.js`,
+which caches the app shell, scripts, styles and fonts so it opens with no network after the first visit. API calls
+(`/api/…`: sync, voice, status) are never cached. Chrome only runs service workers on a trusted origin, so the
+self-signed HTTPS dev server shows the app but does not work offline; use plain HTTP on localhost for that.
+
+Check it on a laptop:
+
+1. `npm run build` then `npm run preview:http`, and open http://localhost:4174 in Chrome or Edge.
+2. DevTools → Application → **Manifest**: no installability errors. **Service workers**: `sw.js` activated.
+3. Click **Install app** on the first screen (or the install icon in the address bar).
+4. Stop the preview server and reload: the app still opens.
+
+On Android Chrome: connect the phone by USB, open `chrome://inspect` → Port forwarding, forward `4174` to
+`localhost:4174`, open http://localhost:4174 on the phone, then menu → **Install app**. (Alternatively add
+`http://<laptop-ip>:4174` under `chrome://flags/#unsafely-treat-insecure-origin-as-secure` on the phone.)
 
 ## Local voice intake server
 
@@ -134,6 +70,9 @@ ollama pull llama3.2:3b
 # run (from the project root), then start the front end with `npm run dev`
 .venv\Scripts\python -m uvicorn server.main:app --port 8000
 ```
+
+Photo descriptions use a local vision model: `ollama pull qwen2.5vl:3b` (about 3 GB; `VISION_MODEL` to change it).
+Without it, "Describe clothing from the photo" says it is not available and the field is typed instead.
 
 On first start the speech model downloads into `server/models/` (large-v3-turbo ~1.6 GB for GPU,
 small ~480 MB for CPU). If Hugging Face downloads stall, set `HF_HUB_DISABLE_XET=1`.
@@ -153,6 +92,8 @@ Settings (environment variables):
 | `OLLAMA_URL` | `http://127.0.0.1:11434` | |
 | `OLLAMA_TIMEOUT` | `15` | Seconds; on timeout the transcript is returned with empty fields |
 | `OLLAMA_KEEP_ALIVE` | `60m` | How long Ollama keeps the model loaded |
+| `VISION_MODEL` | `qwen2.5vl:3b` | Ollama model for "Describe clothing from the photo" |
+| `VISION_TIMEOUT` | `120` | Seconds |
 
 The front end reaches the server through the Vite proxy at `/api`.
 
@@ -160,8 +101,8 @@ Test with sample clips (server must be running): `.venv\Scripts\python server\te
 
 ## Sync, test data and matching
 
-- One dev server: `npm run dev` → https://localhost:3000 (volunteer app), https://localhost:3000/status (family status
-  page). It uses a self-signed certificate: accept the browser warning once.
+- One dev server: `npm run dev` → https://localhost:3000 (first screen and volunteer app), `/console`, `/family`,
+  `/status`. It uses a self-signed certificate: accept the browser warning once.
 - Link panel for sync between sites: http://localhost:8000/sim (also https://localhost:3000/api/sim): presets, live
   traffic counters, and **Reset demo**, which reloads the test data and makes open apps clear both sites' local data.
 - Test data: `.venv\Scripts\python -m server.testdata` (writes `server/testdata/`), then
