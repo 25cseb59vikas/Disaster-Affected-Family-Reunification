@@ -3,8 +3,7 @@ import Dexie from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { AgeBand, Gender, LookingFor, MatchEventKind, PersonRecord, RecordType, ScreenId, SiteId } from '../types';
 import { getMeta, siteDb, type SiteDatabase } from '../db/database';
-import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES } from '../sites';
-import { serverHealth, syncOnce } from '../sync';
+import { applyServerEpoch, serverHealth, syncOnce } from '../sync';
 import { saveEvent, saveRecord, type NewPerson } from '../records';
 
 export type { NewPerson };
@@ -53,7 +52,6 @@ export type SyncStatus = 'offline' | 'syncing' | 'synced';
 
 const SYNC_EVERY_MS = 15000;
 const SITE_KEY = 'reunite.site';
-const EPOCH_KEY = 'reunite.demoEpoch';
 const VOLUNTEER_KEY = 'reunite.volunteer';
 
 const stored = (key: string) => {
@@ -98,9 +96,6 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-// Every local database a demo reset clears.
-const ALL_LOCAL = [...SITES.map(s => s.id), PHONE_LINE.id, AUTHORITY.id, FAMILY_APP.id];
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -157,15 +152,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children, fixedSite, o
         setStatus('offline');
         return;
       }
-      // "Reset demo" on /sim: clear both sites' local data before pushing anything old.
-      const seen = stored(EPOCH_KEY);
-      if (health.demo_epoch && seen && seen !== health.demo_epoch) {
-        store(EPOCH_KEY, health.demo_epoch);
-        await Promise.all(ALL_LOCAL.map(id => siteDb(id).delete()));
-        location.reload();
-        return;
-      }
-      if (health.demo_epoch && !seen) store(EPOCH_KEY, health.demo_epoch);
+      // "Clear all data" or "Reset demo": clear this device's local data before pushing anything old.
+      if (await applyServerEpoch(health.demo_epoch)) return;
       setStatus('syncing');
       await syncOnce(targetDb, target);
       setStatus('synced');

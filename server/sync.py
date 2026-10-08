@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from starlette.concurrency import run_in_threadpool
 
-from . import matching, store
+from . import demo_family, matching, store
 from .load_testdata import load
 
 log = logging.getLogger("sync")
@@ -98,7 +98,7 @@ async def sync_pull(since: int = 0, site: str = ""):
 
 @router.get("/sim/state")
 def sim_state():
-    return {**link, "stats": stats, "epoch": demo_epoch()}
+    return {**link, "stats": stats, "epoch": demo_epoch(), "counts": store.counts()}
 
 
 @router.post("/sim/state")
@@ -114,14 +114,45 @@ async def sim_set(request: Request):
     return sim_state()
 
 
-@router.post("/sim/reset")
-def sim_reset():
-    """Reloads the test data and tells every open app (via /health) to clear its local data."""
-    loaded, suggestions = load(reset=True)
+def clear_all() -> None:
+    """Empties records, events and suggestions, and gives a new demo epoch: every open app (field app,
+    console, family app, phone line) sees it on its next /health check, deletes its local data for all
+    sites (including notifications, which only exist on devices) and reloads."""
+    store.reset()
     store.set_meta("demo_epoch", uuid.uuid4().hex)
     stats.clear()
     stats.update(new_stats())
     link.update({"up": True, "delay_ms": DEFAULT_DELAY_MS, "kbps": None})
+
+
+@router.post("/sim/clear")
+def sim_clear():
+    clear_all()
+    log.info("all data cleared")
+    return sim_state()
+
+
+@router.post("/sim/load-testdata")
+def sim_load_testdata():
+    """Adds the 150 generated test people (registered_by "TEST DATA"); ids are fixed, so loading twice adds nothing."""
+    loaded, suggestions = load(reset=False)
+    log.info("test data loaded: %d records, %d suggestions", loaded, suggestions)
+    return {"loaded": loaded, "suggestions": suggestions, **sim_state()}
+
+
+@router.post("/sim/demo-family")
+def sim_demo_family():
+    """Adds only the fictional demo family: a boy found at Hospital B and his father's search at Camp A."""
+    added = demo_family.load()
+    log.info("demo family loaded: %d new records", added)
+    return {"loaded": added, **sim_state()}
+
+
+@router.post("/sim/reset")
+def sim_reset():
+    """Reset demo: clear all data, then load the test data."""
+    clear_all()
+    loaded, suggestions = load(reset=False)
     log.info("demo reset: %d records, %d suggestions", loaded, suggestions)
     return {"loaded": loaded, "suggestions": suggestions, **sim_state()}
 
@@ -151,6 +182,8 @@ SIM_PAGE = """<!doctype html>
            border: 1px solid #E4E7EB; background: #fff; color: #0F1B2D; width: 100%; text-align: left; }
   button.on { border-color: #0F1B2D; box-shadow: inset 0 0 0 1px #0F1B2D; }
   button.reset { background: #C2540F; color: #fff; border: 0; text-align: center; }
+  button.danger { color: #B3261E; border-color: #F0A9A4; }
+  button:disabled { opacity: .6; cursor: wait; }
   dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; }
   dt { color: #5B6675; } dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
   p.note { color: #5B6675; font-size: 14px; margin: 8px 0 0; }
@@ -184,8 +217,15 @@ SIM_PAGE = """<!doctype html>
     <p class="note">Only sync calls go over this link. Voice, health checks and family status keep working.</p>
   </section>
   <section>
-    <button class="reset" id="reset">Reset demo</button>
-    <p class="note" id="msg">Reloads the test people and clears both sites' local data in open apps.</p>
+    <h2>Data on the server</h2>
+    <p class="state" id="counts">…</p>
+    <div class="presets" style="margin-top:12px">
+      <button class="danger" id="clear">Clear all data</button>
+      <button data-load="/sim/load-testdata">Load test data (150 fictional people)</button>
+      <button data-load="/sim/demo-family">Load fictional demo family</button>
+      <button class="reset" id="reset">Reset demo (clear all, then load the test data)</button>
+    </div>
+    <p class="note" id="msg">Clearing also makes every open app (field app, console, family app) delete its local data for all sites and reload within 15 s.</p>
   </section>
 </main>
 <script>
@@ -203,16 +243,34 @@ SIM_PAGE = """<!doctype html>
     $('bytes-up').textContent = kb(st.bytes_up); $('bytes-down').textContent = kb(st.bytes_down);
     $('records-up').textContent = st.records_up; $('records-down').textContent = st.records_down;
     $('events-up').textContent = st.events_up; $('syncs').textContent = st.syncs; $('last-sync').textContent = ago(st.last_sync);
+    const c = s.counts;
+    $('counts').textContent = c.records === 0 ? 'Empty: no records' : `${c.records} records · ${c.suggestions} suggested matches · ${c.events} decisions`;
   };
+  const busy = on => document.querySelectorAll('section button').forEach(b => b.disabled = on);
   const post = (path, body) => fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body || {}) }).then(r => r.json());
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => post('/sim/state', { preset: b.dataset.preset }).then(show));
+  $('clear').onclick = async () => {
+    if (!confirm('Clear all data? This deletes every record, decision and suggested match on the server, and every open app deletes its local data. It cannot be undone.')) return;
+    busy(true); $('msg').textContent = 'Clearing…';
+    show(await post('/sim/clear'));
+    $('msg').textContent = 'All data cleared. Open apps delete their local data and reload within 15 s.';
+    busy(false);
+  };
+  document.querySelectorAll('[data-load]').forEach(b => b.onclick = async () => {
+    busy(true); $('msg').textContent = 'Loading…';
+    const r = await post(b.dataset.load);
+    show(r);
+    $('msg').textContent = r.loaded ? `Loaded ${r.loaded} records. Apps receive them on their next sync (within 15 s).` : 'Already loaded: nothing new added.';
+    busy(false);
+  });
   $('reset').onclick = async () => {
-    $('reset').disabled = true; $('msg').textContent = 'Resetting…';
+    if (!confirm('Reset demo? This clears all data, then loads the 150 fictional test people.')) return;
+    busy(true); $('msg').textContent = 'Resetting…';
     const r = await post('/sim/reset');
     show(r);
     $('msg').textContent = `Demo reset: ${r.loaded} test people, ${r.suggestions} suggestions. Open apps clear their local data on their next check (within 15 s).`;
-    $('reset').disabled = false;
+    busy(false);
   };
   const poll = () => fetch(base + '/sim/state').then(r => r.json()).then(show).catch(() => { $('state-text').textContent = 'Server not reachable'; });
   poll(); setInterval(poll, 1000);

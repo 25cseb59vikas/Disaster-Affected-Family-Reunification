@@ -4,7 +4,7 @@ import { Mic, Phone, PhoneOff } from 'lucide-react';
 import { Screen } from '../components/Screen';
 import { siteDb } from '../db/database';
 import { PHONE_LINE, recordCode, siteName, uuid } from '../sites';
-import { serverHealth, syncOnce } from '../sync';
+import { applyServerEpoch, serverHealth, syncOnce } from '../sync';
 import { eventsByPair, recordStatus } from '../matchStatus';
 import type { AgeBand, Gender, PersonRecord } from '../types';
 
@@ -78,7 +78,8 @@ export const PhoneLinePage: React.FC = () => {
   // Keep the phone line's copy of the data fresh, so the SMS preview follows the match.
   useEffect(() => {
     const tick = async () => {
-      if (await serverHealth()) await syncOnce(db, PHONE_LINE.id).catch(() => {});
+      const health = await serverHealth();
+      if (health && !(await applyServerEpoch(health.demo_epoch))) await syncOnce(db, PHONE_LINE.id).catch(() => {});
     };
     tick();
     const t = window.setInterval(tick, 15000);

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES } from '../sites';
-import { saveRecord, type NewPerson } from '../records';
 import type { SiteId } from '../types';
 import { linkProps } from '../route';
 import { useConsoleData, type ConsoleData } from './data';
@@ -63,56 +62,6 @@ const ago = (t: number | null) => {
   if (!t) return 'never';
   const s = Math.max(0, Math.round(Date.now() / 1000 - t));
   return s < 2 ? 'just now' : s < 120 ? `${s} s ago` : `${Math.round(s / 60)} min ago`;
-};
-
-// Fictional people, adapted from the teammate's "Load fictional demo family" button.
-const DEMO_BY = 'Demo family (fictional)';
-const DEMO_FAMILY: Array<{ site: SiteId; type: 'found' | 'seeking'; person: NewPerson }> = [
-  {
-    site: 'hospital-b',
-    type: 'found',
-    person: {
-      name: 'Arunkumar', gender: 'male', age_band: 'Under 12', village: 'Kilvelur', relative_name: 'Ravi Kumar', relative_relation: 'father',
-      clothing_marks: 'Blue school shirt, khaki shorts', found_where: 'Near the bridge', last_seen: null, contact_phone: null,
-      private_detail: 'Small scar on the left knee', household_id: null, has_missing_family: true,
-      looking_for: [{ relation: 'father', name: 'Ravi Kumar' }], transcript: null, photo: null
-    }
-  },
-  {
-    site: 'camp-a',
-    type: 'seeking',
-    person: {
-      name: 'Arun Kumar', gender: 'male', age_band: 'Under 12', village: 'Kilvelur', relative_name: 'Ravi Kumar', relative_relation: 'father',
-      clothing_marks: 'Blue shirt', found_where: null, last_seen: 'Near the bridge, separated during the flood', contact_phone: '00000 00000 (fictional)',
-      private_detail: null, household_id: null, has_missing_family: false, looking_for: [], transcript: null, photo: null
-    }
-  }
-];
-
-const DemoFamily: React.FC<{ data: ConsoleData }> = ({ data }) => {
-  const { db, syncNow } = useApp();
-  const [busy, setBusy] = useState(false);
-  const loaded = data.records.some(r => r.registered_by === DEMO_BY);
-
-  const load = async () => {
-    setBusy(true);
-    for (const d of DEMO_FAMILY) await saveRecord(db, d.site, d.type, DEMO_BY, d.person);
-    await syncNow();
-    setBusy(false);
-  };
-
-  return (
-    <section className="card">
-      <h2 className="text-lg font-semibold text-navy">Demo helper</h2>
-      <p className="text-sm text-navy-muted mt-1">
-        Adds a fictional boy found at Hospital B and his father's search at Camp A. They sync like any other records and should appear as a
-        match in the queue within a few seconds.
-      </p>
-      <button type="button" onClick={load} disabled={busy || loaded} className="btn-primary w-auto px-5 mt-3 disabled:cursor-default">
-        {loaded ? 'Demo family loaded' : busy ? 'Loading…' : 'Load fictional demo family'}
-      </button>
-    </section>
-  );
 };
 
 /** /console: counts per site, the link between sites, and what needs attention. */
@@ -206,7 +155,6 @@ export const OverviewPage: React.FC = () => {
             <p className="text-sm text-civilBlue">Open the match queue</p>
           </a>
 
-          {data && <DemoFamily data={data} />}
         </div>
       </div>
     </>

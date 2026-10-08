@@ -59,6 +59,7 @@ export const MatchQueuePage: React.FC = () => {
     })
     .sort((a, b) => b.score - a.score);
 
+  const noneAtAll = data !== undefined && data.suggestions.length === 0 && rejectedOnly.length === 0;
   const select = (id: string) => go(`/console/matches?pair=${encodeURIComponent(id)}`);
 
   const queue = (
@@ -139,7 +140,7 @@ export const MatchQueuePage: React.FC = () => {
             })}
           </tbody>
         </table>
-        {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">No matches here.</p>}
+        {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">{noneAtAll ? 'No matches yet' : 'No matches here.'}</p>}
       </div>
 
       <div className="md:hidden card-stack">
@@ -163,7 +164,7 @@ export const MatchQueuePage: React.FC = () => {
             </button>
           );
         })}
-        {data && rows.length === 0 && <p className="card text-center text-base text-navy-muted">No matches here.</p>}
+        {data && rows.length === 0 && <p className="card text-center text-base text-navy-muted">{noneAtAll ? 'No matches yet' : 'No matches here.'}</p>}
       </div>
     </section>
   );

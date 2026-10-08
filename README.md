@@ -103,10 +103,16 @@ Test with sample clips (server must be running): `.venv\Scripts\python server\te
 
 - One dev server: `npm run dev` → https://localhost:3000 (first screen and volunteer app), `/console`, `/family`,
   `/status`. It uses a self-signed certificate: accept the browser warning once.
-- Link panel for sync between sites: http://localhost:8000/sim (also https://localhost:3000/api/sim): presets, live
-  traffic counters, and **Reset demo**, which reloads the test data and makes open apps clear both sites' local data.
-- Test data: `.venv\Scripts\python -m server.testdata` (writes `server/testdata/`), then
-  `.venv\Scripts\python -m server.load_testdata --reset` to load it; each site receives it on its next sync.
+- The server starts empty: no test data is loaded on startup.
+- Demo data, on the link panel http://localhost:8000/sim (also /api/sim) and in the console under **Settings**:
+  - **Clear all data**: empties the server (records, decisions, suggested matches) and every open app (field app,
+    console, family app, phone line) deletes its local data for all sites and reloads within 15 s. Asks first.
+  - **Load test data (150 fictional people)**: the generated set, marked "TEST DATA" (`server/testdata/people.json`).
+  - **Load fictional demo family**: one case, a boy found at Hospital B and his father's search at Camp A.
+  - **Reset demo** (link panel only): clear all data, then load the test data.
+- Test data from the command line: `.venv\Scripts\python -m server.testdata` (regenerates `server/testdata/`), then
+  `.venv\Scripts\python -m server.load_testdata` to add it (`--reset` clears first; open apps are only told to clear
+  their local data when you use the buttons above).
 - Matching quality: `.venv\Scripts\python -m server.evaluate`. Weights are in `server/match_config.py`.
 - Server data lives in `server/data/reunite.db` (not in git). After `load_testdata --reset` from the command line,
   clear site data in the browser (DevTools → Application → Storage); the Reset demo button does this for you.

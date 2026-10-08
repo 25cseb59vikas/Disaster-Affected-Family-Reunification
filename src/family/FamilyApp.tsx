@@ -9,7 +9,7 @@ import { saveRecord, type NewPerson } from '../records';
 import { linkProps, useRoute } from '../route';
 import { switchRole } from '../role';
 import { AUTHORITY, FAMILY_APP, SITES } from '../sites';
-import { pushOutbox } from '../sync';
+import { applyServerEpoch, pushOutbox, serverHealth } from '../sync';
 import type { PersonRecord } from '../types';
 import { DemoNotice } from '../components/DemoNotice';
 import { InstallButton } from '../components/InstallButton';
@@ -23,7 +23,11 @@ const SEND_EVERY_MS = 15000;
 function useSender() {
   const waiting = useLiveQuery(() => db.outbox.count(), [], 0);
   useEffect(() => {
-    const send = () => pushOutbox(db, FAMILY_APP.id).catch(() => {}); // stays queued until the server is reachable
+    const send = async () => {
+      const health = await serverHealth();
+      if (!health || (await applyServerEpoch(health.demo_epoch))) return;
+      await pushOutbox(db, FAMILY_APP.id).catch(() => {}); // stays queued until the server is reachable
+    };
     send();
     const t = window.setInterval(send, SEND_EVERY_MS);
     return () => clearInterval(t);

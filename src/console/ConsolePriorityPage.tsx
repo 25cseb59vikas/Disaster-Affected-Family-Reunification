@@ -41,7 +41,7 @@ export const ConsolePriorityPage: React.FC = () => {
             </div>
           );
         })}
-        {result && result.cases.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-2">Nothing urgent right now.</p>}
+        {result && result.cases.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-2">No priority cases</p>}
       </div>
     </>
   );

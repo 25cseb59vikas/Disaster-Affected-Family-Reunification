@@ -118,7 +118,7 @@ export const RecordsPage: React.FC = () => {
             ))}
           </tbody>
         </table>
-        {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">No records match.</p>}
+        {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">{data.records.length === 0 ? 'No records yet' : 'No records match.'}</p>}
       </div>
 
       <div className="md:hidden card-stack">
@@ -136,7 +136,7 @@ export const RecordsPage: React.FC = () => {
             </span>
           </a>
         ))}
-        {data && rows.length === 0 && <p className="card text-center text-base text-navy-muted">No records match.</p>}
+        {data && rows.length === 0 && <p className="card text-center text-base text-navy-muted">{data.records.length === 0 ? 'No records yet' : 'No records match.'}</p>}
       </div>
     </>
   );

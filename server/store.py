@@ -158,6 +158,13 @@ def pull(since: int, site: str) -> dict:
     return {"cursor": cursor, "records": records, "events": events, "suggestions": suggestions}
 
 
+def counts() -> dict:
+    c = conn()
+    one = lambda sql: c.execute(sql).fetchone()[0]
+    return {"records": one("SELECT COUNT(*) FROM records"), "events": one("SELECT COUNT(*) FROM events"),
+            "suggestions": len(visible_suggestions())}
+
+
 def reset() -> None:
     with _lock:
         c = conn()

@@ -1,6 +1,6 @@
-import { getMeta, setMeta, type SiteDatabase } from './db/database';
+import { getMeta, setMeta, siteDb, type SiteDatabase } from './db/database';
 import type { AppNotification, MatchEvent, PersonRecord, SiteId, Suggestion } from './types';
-import { siteName } from './sites';
+import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES, siteName } from './sites';
 
 const API = '/api';
 
@@ -12,6 +12,34 @@ export async function serverHealth(): Promise<{ demo_epoch?: string } | null> {
   } catch {
     return null;
   }
+}
+
+// Every local database on this device: cleared when the server's data is cleared or reset.
+const ALL_LOCAL = [...SITES.map(s => s.id), PHONE_LINE.id, AUTHORITY.id, FAMILY_APP.id];
+const EPOCH_KEY = 'reunite.demoEpoch';
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('reunite-data') : null;
+// Another tab on this device already cleared the local data: reload so nothing reads deleted databases.
+if (channel) channel.onmessage = e => e.data === 'cleared' && location.reload();
+
+/**
+ * "Clear all data" or "Reset demo" on the server gives a new epoch (seen in /health). The first time this
+ * device sees a new one, it deletes its local data for all sites (records, outbox, notifications) and reloads.
+ * Returns true when that is happening, so the caller should stop.
+ */
+export async function applyServerEpoch(epoch: string | undefined): Promise<boolean> {
+  if (!epoch) return false;
+  let seen: string | null = null;
+  try {
+    seen = localStorage.getItem(EPOCH_KEY);
+    if (seen !== epoch) localStorage.setItem(EPOCH_KEY, epoch);
+  } catch {
+    return false; // storage blocked: cannot compare, keep the data
+  }
+  if (!seen || seen === epoch) return false;
+  await Promise.all(ALL_LOCAL.map(id => siteDb(id).delete()));
+  channel?.postMessage('cleared');
+  location.reload();
+  return true;
 }
 
 /**
