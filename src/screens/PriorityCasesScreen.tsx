@@ -26,7 +26,7 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
   const bestFor = new Map<string, Suggestion>();
   for (const s of suggestions) {
     const st = states.get(s.id)!;
-    if (st.status === 'confirmed') reunited.add(s.found_id).add(s.seeking_id);
+    if (st.status === 'verified') reunited.add(s.found_id).add(s.seeking_id);
     if (st.status === 'ruled_out') continue;
     if ((bestFor.get(s.found_id)?.score ?? -1) < s.score) bestFor.set(s.found_id, s);
   }
@@ -45,7 +45,8 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
   }
   for (const s of suggestions) {
     const st = states.get(s.id)!;
-    const waiting = (st.status === 'partly_confirmed' || (st.status === 'open' && s.band === 'Strong')) && !st.confirmedBy[site];
+    const familyCheck = st.status === 'confirmed';
+    const waiting = familyCheck || ((st.status === 'partly_confirmed' || (st.status === 'open' && s.band === 'Strong')) && !st.confirmedBy[site]);
     if (!waiting) continue;
     const f = byId.get(s.found_id);
     const other = Object.keys(st.confirmedBy)[0];
@@ -53,7 +54,11 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
       key: `confirm-${s.id}`,
       rank: 2,
       title: f?.name ?? `Person ${f?.code ?? ''}`,
-      reason: st.status === 'partly_confirmed' ? `Confirmed at ${siteName(other)}, waiting for you` : 'Strong match waiting for confirmation',
+      reason: familyCheck
+        ? 'Both sites confirmed: ask the family question'
+        : st.status === 'partly_confirmed'
+          ? `Confirmed at ${siteName(other)}, waiting for you`
+          : 'Strong match waiting for confirmation',
       reasonColor: 'text-civilBlue',
       detail: `Match score ${s.score}`,
       created_at: f?.created_at ?? '',
@@ -61,7 +66,7 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
     });
   }
   cases.sort((a, b) => a.rank - b.rank || a.created_at.localeCompare(b.created_at));
-  return { cases, reunitedPairs: [...states.values()].filter(s => s.status === 'confirmed').length, reunited };
+  return { cases, reunitedPairs: [...states.values()].filter(s => s.status === 'verified').length, reunited };
 }
 
 export const PriorityCasesScreen: React.FC = () => {

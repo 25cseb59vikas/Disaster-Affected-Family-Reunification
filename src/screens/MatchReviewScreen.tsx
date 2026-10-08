@@ -4,21 +4,23 @@ import { Check, Circle, HelpCircle, Minus, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
 import { SITES, siteName } from '../sites';
-import { pairState } from '../matchStatus';
+import { familyQuestion, pairState } from '../matchStatus';
 import type { PersonRecord } from '../types';
 
-const RecordColumn: React.FC<{ r?: PersonRecord; title: string }> = ({ r, title }) => {
+const NAMELESS_LABEL = 'No name recorded – matched on description';
+
+/** One record's public fields. The private detail is never listed; the place found shows only once verified. */
+const RecordColumn: React.FC<{ r?: PersonRecord; title: string; showPlace: boolean }> = ({ r, title, showPlace }) => {
+  const relation = r?.relative_relation ? ` (${r.relative_relation})` : '';
   const rows: Array<[string, string | null | undefined]> = r
     ? [
         ['Name', r.name],
         ['Gender', r.gender === 'unknown' ? null : r.gender],
         ['Age', r.age_band],
         ['Village', r.village],
-        [r.type === 'found' ? `Relative${r.relative_relation ? ` (${r.relative_relation})` : ''}` : `Searching${r.relative_relation ? ` (${r.relative_relation})` : ''}`, r.relative_name],
+        [r.type === 'found' ? `Relative${relation}` : `Searching${relation}`, r.relative_name],
         ['Clothing, marks', r.clothing_marks],
-        ...(r.type === 'found'
-          ? ([['Found', r.found_where]] as Array<[string, string | null]>)
-          : ([['Last seen', r.last_seen]] as Array<[string, string | null | undefined]>))
+        r.type === 'found' ? ['Found', showPlace ? r.found_where : r.found_where && 'Shown after the family check'] : ['Last seen', r.last_seen]
       ]
     : [];
   return (
@@ -65,11 +67,48 @@ const EvidenceList: React.FC<{ title: string; items: string[]; icon: React.React
   </section>
 );
 
+const NoteBox: React.FC<{ id: string; label: string; submitLabel: string; onSubmit: (note: string) => void; required: string }> = ({
+  id,
+  label,
+  submitLabel,
+  onSubmit,
+  required
+}) => {
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+  return (
+    <div className="card mt-2">
+      <label htmlFor={id} className="field-label">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        rows={2}
+        value={note}
+        onChange={e => {
+          setNote(e.target.value);
+          setError('');
+        }}
+        className="input h-auto py-3 resize-none"
+      />
+      {error && <p className="text-sm text-urgent mt-1.5">{error}</p>}
+      <button
+        type="button"
+        onClick={() => (note.trim() ? onSubmit(note) : setError(required))}
+        className="btn-text -ml-2 text-urgent"
+      >
+        {submitLabel}
+      </button>
+    </div>
+  );
+};
+
 export const MatchReviewScreen: React.FC = () => {
   const { db, site, selectedSuggestionId, addEvent } = useApp();
   const [ruleOutOpen, setRuleOutOpen] = useState(false);
-  const [reason, setReason] = useState('');
-  const [reasonError, setReasonError] = useState('');
+  const [mismatchOpen, setMismatchOpen] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [identityChecked, setIdentityChecked] = useState(false);
 
   const data = useLiveQuery(
     async () => {
@@ -99,29 +138,38 @@ export const MatchReviewScreen: React.FC = () => {
   const state = pairState(events);
   const confirmedHere = Boolean(state.confirmedBy[site]);
   const otherSite = SITES.find(x => x.id !== site)!;
-  const closed = state.status === 'ruled_out' || state.status === 'confirmed';
+  const closed = state.status === 'ruled_out' || state.status === 'verified';
+  const familyStep = state.status === 'confirmed';
+  const detail = found?.private_detail?.trim();
 
-  const submitRuleOut = async () => {
-    if (!reason.trim()) {
-      setReasonError('Say why this is not the same person.');
-      return;
-    }
-    await addEvent('rule_out', foundId, seekingId, reason);
-    setRuleOutOpen(false);
-  };
+  let footer: React.ReactNode;
+  if (familyStep && detail) {
+    footer = (
+      <button type="button" onClick={() => addEvent('family_match', foundId, seekingId, 'Family answer matches')} className="btn-primary">
+        Answer matches
+      </button>
+    );
+  } else if (familyStep) {
+    footer = (
+      <button
+        type="button"
+        disabled={!identityChecked}
+        onClick={() => addEvent('family_match', foundId, seekingId, 'Identity verified with a document or trusted local person')}
+        className="btn-primary disabled:cursor-not-allowed"
+      >
+        Mark as verified
+      </button>
+    );
+  } else if (!closed && !confirmedHere) {
+    footer = (
+      <button type="button" onClick={() => addEvent('confirm', foundId, seekingId)} className="btn-primary">
+        Confirm
+      </button>
+    );
+  }
 
   return (
-    <Screen
-      showBack
-      nav="matches"
-      footer={
-        !closed && !confirmedHere ? (
-          <button type="button" onClick={() => addEvent('confirm', foundId, seekingId)} className="btn-primary">
-            Confirm
-          </button>
-        ) : undefined
-      }
-    >
+    <Screen showBack nav="matches" footer={footer}>
       <h1 className="screen-title">Evidence</h1>
 
       {s && (
@@ -131,14 +179,16 @@ export const MatchReviewScreen: React.FC = () => {
         </div>
       )}
 
-      {s?.nameless && (
-        <p className="card mb-3 bg-pending-bg border-pending-border text-base font-medium text-navy">No name recorded – matched on description</p>
-      )}
+      {s?.nameless && <p className="card mb-3 bg-pending-bg border-pending-border text-base font-medium text-navy">{NAMELESS_LABEL}</p>}
 
-      {state.status === 'confirmed' && (
-        <p className="card mb-3 bg-verified-bg border-verified-border text-base font-medium text-verified">
-          Confirmed by officers at both sites.
-        </p>
+      {state.status === 'verified' && found && (
+        <div className="card mb-3 bg-verified-bg border-verified-border">
+          <p className="text-base font-semibold text-verified">Verified with the family.</p>
+          <p className="text-base text-navy">
+            The person is at {siteName(found.site)}
+            {found.found_where ? ` (found ${found.found_where})` : ''}. Send the family to the help desk at {siteName(found.site)}.
+          </p>
+        </div>
       )}
       {state.status === 'ruled_out' && (
         <p className="card mb-3 bg-urgent-bg border-urgent-border text-base text-navy">
@@ -146,8 +196,66 @@ export const MatchReviewScreen: React.FC = () => {
           {state.ruledOut!.reason ? `: ${state.ruledOut!.reason}` : ''}. It will not be suggested again.
         </p>
       )}
+      {state.lastMismatch && !closed && !familyStep && (
+        <p className="card mb-3 bg-pending-bg border-pending-border text-base text-navy">
+          Back to review: the family's answer did not match ({state.lastMismatch.officer}, {siteName(state.lastMismatch.site)}
+          {state.lastMismatch.reason ? `: ${state.lastMismatch.reason}` : ''}). Officers need to confirm again.
+        </p>
+      )}
 
-      {s?.ask_next && !closed && (
+      {familyStep && (
+        <section className="card mb-3 bg-civilBlue-soft border-civilBlue/20">
+          <p className="text-sm font-medium text-civilBlue">Both officers confirmed. Last step: family check</p>
+          {detail ? (
+            <>
+              <p className="text-lg font-semibold text-navy mt-1">Ask the family: {familyQuestion(detail)}</p>
+              {showAnswer ? (
+                <p className="text-base text-navy mt-2">
+                  <span className="text-sm text-navy-muted">Expected answer (officer only): </span>
+                  {detail}
+                </p>
+              ) : (
+                <button type="button" onClick={() => setShowAnswer(true)} className="btn-text -ml-2">
+                  Show expected answer
+                </button>
+              )}
+              <div>
+                <button type="button" onClick={() => setMismatchOpen(o => !o)} className="btn-text -ml-2 text-urgent">
+                  Answer does not match
+                </button>
+              </div>
+              {mismatchOpen && (
+                <NoteBox
+                  id="mismatch-note"
+                  label="What did the family say?"
+                  submitLabel="Send back to review"
+                  required="Add a short note for the other officers."
+                  onSubmit={note => {
+                    addEvent('family_mismatch', foundId, seekingId, note);
+                    setMismatchOpen(false);
+                    setShowAnswer(false);
+                  }}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-base text-navy mt-1">No private detail recorded. Verify identity with a document or a trusted local person.</p>
+              <label className="flex items-start gap-3 mt-2 min-h-[44px] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={identityChecked}
+                  onChange={e => setIdentityChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 shrink-0 accent-terracotta"
+                />
+                <span className="text-base text-navy">I checked their identity with a document or a trusted local person.</span>
+              </label>
+            </>
+          )}
+        </section>
+      )}
+
+      {s?.ask_next && !closed && !familyStep && (
         <div className="card mb-3 bg-pending-bg border-pending-border">
           <p className="text-sm font-medium text-pending">Ask next</p>
           <p className="text-lg font-semibold text-navy">{s.ask_next}</p>
@@ -155,8 +263,8 @@ export const MatchReviewScreen: React.FC = () => {
       )}
 
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <RecordColumn r={found} title="Found person" />
-        <RecordColumn r={seeking} title="Being searched for" />
+        <RecordColumn r={found} title="Found person" showPlace={state.status === 'verified'} />
+        <RecordColumn r={seeking} title="Being searched for" showPlace={state.status === 'verified'} />
       </div>
 
       {s && (
@@ -176,7 +284,7 @@ export const MatchReviewScreen: React.FC = () => {
         <h2 className="text-sm font-medium text-navy-muted mb-2">Confirmation</h2>
         <ol className="space-y-2">
           {[SITES.find(x => x.id === site)!, otherSite].map(x => {
-            const e = state.confirmedBy[x.id];
+            const e = state.confirmedBy[x.id] ?? (state.status === 'verified' ? events.find(ev => ev.kind === 'confirm' && ev.site === x.id) : undefined);
             return (
               <li key={x.id} className="flex items-center gap-2 text-base">
                 {e ? <Check className="w-5 h-5 shrink-0 text-verified" strokeWidth={1.75} /> : <Circle className="w-5 h-5 shrink-0 text-navy-muted" strokeWidth={1.75} />}
@@ -188,6 +296,13 @@ export const MatchReviewScreen: React.FC = () => {
               </li>
             );
           })}
+          <li className="flex items-center gap-2 text-base">
+            {state.verifiedBy ? <Check className="w-5 h-5 shrink-0 text-verified" strokeWidth={1.75} /> : <Circle className="w-5 h-5 shrink-0 text-navy-muted" strokeWidth={1.75} />}
+            <span className="min-w-0 flex-1">Family check</span>
+            <span className={`text-sm shrink-0 ${state.verifiedBy ? 'text-verified' : 'text-navy-muted'}`}>
+              {state.verifiedBy ? state.verifiedBy.officer : familyStep ? 'Now' : 'Locked'}
+            </span>
+          </li>
         </ol>
         {state.needInfo.length > 0 && (
           <p className="text-sm text-pending mt-2">
@@ -196,7 +311,7 @@ export const MatchReviewScreen: React.FC = () => {
         )}
       </section>
 
-      {!closed && (
+      {!closed && !familyStep && (
         <div className="flex flex-wrap gap-x-2">
           <button type="button" onClick={() => setRuleOutOpen(o => !o)} className="btn-text -ml-2 text-urgent">
             Rule out
@@ -207,26 +322,17 @@ export const MatchReviewScreen: React.FC = () => {
         </div>
       )}
 
-      {ruleOutOpen && !closed && (
-        <div className="card mt-2">
-          <label htmlFor="rule-out-reason" className="field-label">
-            Why is this not the same person?
-          </label>
-          <textarea
-            id="rule-out-reason"
-            rows={2}
-            value={reason}
-            onChange={e => {
-              setReason(e.target.value);
-              setReasonError('');
-            }}
-            className="input h-auto py-3 resize-none"
-          />
-          {reasonError && <p className="text-sm text-urgent mt-1.5">{reasonError}</p>}
-          <button type="button" onClick={submitRuleOut} className="btn-text -ml-2 text-urgent">
-            Rule out this match
-          </button>
-        </div>
+      {ruleOutOpen && !closed && !familyStep && (
+        <NoteBox
+          id="rule-out-reason"
+          label="Why is this not the same person?"
+          submitLabel="Rule out this match"
+          required="Say why this is not the same person."
+          onSubmit={note => {
+            addEvent('rule_out', foundId, seekingId, note);
+            setRuleOutOpen(false);
+          }}
+        />
       )}
     </Screen>
   );

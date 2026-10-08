@@ -8,7 +8,8 @@ import { eventsByPair, pairState, type PairStatus } from '../matchStatus';
 import type { PersonRecord } from '../types';
 
 const STATUS_BADGE: Record<PairStatus, [string, string] | null> = {
-  confirmed: ['Confirmed', 'bg-verified-bg text-verified border-verified-border'],
+  verified: ['Verified with family', 'bg-verified-bg text-verified border-verified-border'],
+  confirmed: ['Family check next', 'bg-civilBlue-soft text-civilBlue border-civilBlue/20'],
   partly_confirmed: ['Confirmed at one site', 'bg-civilBlue-soft text-civilBlue border-civilBlue/20'],
   ruled_out: null,
   open: null

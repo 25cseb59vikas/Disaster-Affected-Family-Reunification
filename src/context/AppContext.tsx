@@ -117,25 +117,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     Dexie.delete('ReuniteReliefDB').catch(() => {});
   }, []);
 
-  const syncing = useRef(false);
-  const syncNow = useCallback(async () => {
-    if (syncing.current) return;
-    syncing.current = true;
+  // One sync at a time per site. A sync still running for a site we switched away from
+  // must neither block the new site's sync nor overwrite its status.
+  // A request made while that site is syncing runs again afterwards, even after switching away,
+  // so a confirmation tapped just before "Switch" is still sent.
+  const syncingSites = useRef(new Set<SiteId>());
+  const pendingSites = useRef(new Set<SiteId>());
+  const currentSite = useRef(site);
+  currentSite.current = site;
+  const runSync = useRef(async (targetDb: SiteDatabase, target: SiteId): Promise<void> => {
+    if (syncingSites.current.has(target)) {
+      pendingSites.current.add(target);
+      return;
+    }
+    syncingSites.current.add(target);
+    const setStatus = (s: SyncStatus) => {
+      if (currentSite.current === target) setSyncStatus(s);
+    };
     try {
       if (!(await serverReachable())) {
-        setSyncStatus('offline');
+        setStatus('offline');
         return;
       }
-      setSyncStatus('syncing');
-      await syncOnce(db, site);
-      setSyncStatus('synced');
+      setStatus('syncing');
+      await syncOnce(targetDb, target);
+      setStatus('synced');
     } catch (err) {
       console.warn('Sync failed', err);
-      setSyncStatus('offline');
+      setStatus('offline');
     } finally {
-      syncing.current = false;
+      syncingSites.current.delete(target);
+      if (pendingSites.current.delete(target)) runSync.current(targetDb, target);
     }
-  }, [db, site]);
+  });
+  const syncNow = useCallback(() => runSync.current(db, site), [db, site]);
 
   useEffect(() => {
     syncNow();

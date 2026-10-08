@@ -67,6 +67,7 @@ export const VerifyDetailsScreen: React.FC = () => {
   const [relativeRelation, setRelativeRelation] = useState(voiceDraft.relativeRelation);
   const [clothingMarks, setClothingMarks] = useState(voiceDraft.clothingMarks);
   const [foundWhere, setFoundWhere] = useState(voiceDraft.foundWhere);
+  const [privateDetail, setPrivateDetail] = useState('');
   const [lookingFor, setLookingFor] = useState<LookingFor[]>(voiceDraft.lookingFor);
   const [hasMissingFamily, setHasMissingFamily] = useState(voiceDraft.lookingFor.length > 0);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
@@ -102,6 +103,7 @@ export const VerifyDetailsScreen: React.FC = () => {
       clothing_marks: clothingMarks.trim() || null,
       found_where: isFound ? foundWhere.trim() || null : null,
       last_seen: isFound ? null : foundWhere.trim() || null,
+      private_detail: isFound ? privateDetail.trim() || null : null,
       household_id: null,
       has_missing_family: isFound && hasMissingFamily,
       looking_for:
@@ -217,6 +219,23 @@ export const VerifyDetailsScreen: React.FC = () => {
           onChange={setFoundWhere}
           unsure={registrationType === 'found' && unsure('found_where')}
         />
+
+        {registrationType === 'found' && (
+          <div>
+            <label htmlFor="private-detail" className="field-label">
+              Private detail (not shown to searchers)
+            </label>
+            <input
+              id="private-detail"
+              type="text"
+              value={privateDetail}
+              onChange={e => setPrivateDetail(e.target.value)}
+              className="input"
+              autoComplete="off"
+            />
+            <p className="text-sm text-navy-muted mt-1">For example a scar, a birthmark, or what was in their pocket. Used to check the family's answer.</p>
+          </div>
+        )}
 
         <div>
           <input

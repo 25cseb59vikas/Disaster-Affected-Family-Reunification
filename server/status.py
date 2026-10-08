@@ -1,4 +1,5 @@
-"""Public family status by record code: one status sentence, no names, no location until confirmed."""
+"""Public family status by record code: one status sentence, no names, no location until verified.
+Never returns record fields, so the private detail cannot leak here."""
 from fastapi import APIRouter, HTTPException
 
 from . import store
@@ -8,10 +9,20 @@ SITE_NAMES = {"camp-a": "Camp A", "hospital-b": "Hospital B"}
 router = APIRouter()
 
 
-def confirmed(events: list[dict]) -> bool:
+def verified(events: list[dict]) -> bool:
+    """Same rules as the app: both officers confirm, then the family answer matches.
+    A family answer that does not match clears the confirmations."""
     if any(e["kind"] == "rule_out" for e in events):
         return False
-    return {e["site"] for e in events if e["kind"] == "confirm"} >= set(SITE_NAMES)
+    confirmed: set[str] = set()
+    for e in sorted(events, key=lambda e: e.get("created_at") or ""):
+        if e["kind"] == "confirm":
+            confirmed.add(e["site"])
+        elif e["kind"] == "family_mismatch":
+            confirmed.clear()
+        elif e["kind"] == "family_match" and confirmed >= set(SITE_NAMES):
+            return True
+    return False
 
 
 @router.get("/status/{code}")
@@ -28,7 +39,7 @@ def family_status(code: str):
             pairs.setdefault((e["found_id"], e["seeking_id"]), []).append(e)
 
     for (found_id, _), events in pairs.items():
-        if confirmed(events):
+        if verified(events):
             found = next((r for r in store.all_records() if r["id"] == found_id), record)
             return {"status": "found", "help_desk": SITE_NAMES.get(found["site"], found["site"])}
 

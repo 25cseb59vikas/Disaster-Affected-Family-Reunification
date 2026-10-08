@@ -44,6 +44,9 @@ MARKS = ["scar on left eyebrow", "mole on chin", "tattoo on right arm", "gold no
          "burn mark on left hand", "spectacles", "birthmark on neck", "limp in right leg", "bandage on head"]
 FOUND_WHERE = ["near the bus stand", "on the beach road", "near the church", "at the temple", "near the market",
                "on the highway", "at the school", "near the fishing harbour"]
+PRIVATE = ["a bus ticket to Nagapattinam in the shirt pocket", "small scar behind the right ear",
+           "a black thread on the left wrist", "a photo of a baby in a plastic cover", "a silver toe ring",
+           "birthmark on the back of the neck"]
 START = datetime(2026, 10, 7, 6, 0, tzinfo=timezone.utc)
 
 records: list[dict] = []
@@ -94,7 +97,7 @@ def record(kind: str, site: str, **fields) -> dict:
         "created_at": (START + timedelta(minutes=rng.randint(0, 2 * 24 * 60))).isoformat(),
         "registered_by": "TEST DATA", "name": None, "gender": "unknown", "age_band": None, "village": None,
         "relative_name": None, "relative_relation": None, "clothing_marks": None, "found_where": None,
-        "household_id": None, "last_seen": None, "has_missing_family": False, "looking_for": [], "transcript": None, "photo": None,
+        "household_id": None, "last_seen": None, "private_detail": None, "has_missing_family": False, "looking_for": [], "transcript": None, "photo": None,
     }
     r.update(fields)
     records.append(r)
@@ -164,6 +167,8 @@ def true_pair(i: int, p: dict | None = None, household: str | None = None, kind:
         s["clothing_marks"] = None
     if "missing_relative" in variations:
         f["relative_name"], f["relative_relation"] = None, None
+    if i % 3 != 2:
+        f["private_detail"] = PRIVATE[i % len(PRIVATE)]
     truth.append({"found_id": f["id"], "seeking_id": s["id"], "kind": kind, "variations": sorted(variations)})
 
 

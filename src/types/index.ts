@@ -41,6 +41,7 @@ export interface PersonRecord {
   clothing_marks: string | null;
   found_where: string | null;
   last_seen?: string | null; // seeking only: where the family last saw them
+  private_detail?: string | null; // found only: for the family check; never shown to searchers or on /status
   household_id: string | null;
   has_missing_family: boolean;
   looking_for: LookingFor[];
@@ -54,7 +55,7 @@ export interface OutboxItem {
   payload: PersonRecord | MatchEvent;
 }
 
-export type MatchEventKind = 'confirm' | 'rule_out' | 'need_info';
+export type MatchEventKind = 'confirm' | 'rule_out' | 'need_info' | 'family_match' | 'family_mismatch';
 
 /** An officer's decision on a suggested pair. Synced like records. */
 export interface MatchEvent {
