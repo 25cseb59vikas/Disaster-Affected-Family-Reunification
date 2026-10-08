@@ -1,21 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Dexie from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
-import type {
-  AgeBand,
-  Gender,
-  LookingFor,
-  MatchEvent,
-  MatchEventKind,
-  PersonRecord,
-  RecordType,
-  ScreenId,
-  SiteId
-} from '../types';
+import type { AgeBand, Gender, LookingFor, MatchEventKind, PersonRecord, RecordType, ScreenId, SiteId } from '../types';
 import { getMeta, siteDb, type SiteDatabase } from '../db/database';
-import { SITES } from '../sites';
-import { recordCode, uuid } from '../sites';
+import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES } from '../sites';
 import { serverHealth, syncOnce } from '../sync';
+import { saveEvent, saveRecord, type NewPerson } from '../records';
+
+export type { NewPerson };
 
 // Fields filled from the voice server (or empty when typing). `unsure` lists
 // the server's field names that the volunteer should check.
@@ -48,8 +40,6 @@ export const emptyDraft: VoiceDraft = {
   unsure: [],
   notice: ''
 };
-
-export type NewPerson = Omit<PersonRecord, 'id' | 'code' | 'site' | 'type' | 'created_at' | 'registered_by'>;
 
 export type SyncStatus = 'offline' | 'syncing' | 'synced';
 
@@ -91,7 +81,7 @@ interface AppContextType {
   voiceDraft: VoiceDraft;
   setVoiceDraft: React.Dispatch<React.SetStateAction<VoiceDraft>>;
   lastSavedId: string | null;
-  saveNewPerson: (person: NewPerson) => Promise<PersonRecord>;
+  saveNewPerson: (person: NewPerson, type?: RecordType) => Promise<PersonRecord>;
   addEvent: (kind: MatchEventKind, foundId: string, seekingId: string, reason?: string) => Promise<void>;
   selectedSuggestionId: string | null;
   setSelectedSuggestionId: (id: string | null) => void;
@@ -101,11 +91,25 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const initialSite = stored(SITE_KEY) as SiteId | null;
+// Every local database a demo reset clears.
+const ALL_LOCAL = [...SITES.map(s => s.id), PHONE_LINE.id, AUTHORITY.id, FAMILY_APP.id];
+
+interface AppProviderProps {
+  children: React.ReactNode;
+  /** Pin to one site (the authority console); the remembered field-app site is then left alone. */
+  fixedSite?: SiteId;
+  /** Name stored on records and decisions when the site is pinned. */
+  officer?: string;
+}
+
+export const AppProvider: React.FC<AppProviderProps> = ({ children, fixedSite, officer }) => {
+  const initialSite = fixedSite ?? (stored(SITE_KEY) as SiteId | null);
   const [screenHistory, setScreenHistory] = useState<ScreenId[]>([initialSite ? 'register_choose_type' : 'choose_site']);
   const [site, setSite] = useState<SiteId>(initialSite ?? 'camp-a');
-  const [volunteerName, setVolunteerName] = useState<string>(stored(VOLUNTEER_KEY) ?? '');
+  const [volunteerName, setVolunteerName] = useState<string>(officer ?? stored(VOLUNTEER_KEY) ?? '');
+  useEffect(() => {
+    if (officer !== undefined) setVolunteerName(officer);
+  }, [officer]);
   const [registrationType, setRegistrationType] = useState<RecordType>('found');
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
   const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(emptyDraft);
@@ -149,7 +153,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const seen = stored(EPOCH_KEY);
       if (health.demo_epoch && seen && seen !== health.demo_epoch) {
         store(EPOCH_KEY, health.demo_epoch);
-        await Promise.all(SITES.map(x => siteDb(x.id).delete()));
+        await Promise.all(ALL_LOCAL.map(id => siteDb(id).delete()));
         location.reload();
         return;
       }
@@ -193,40 +197,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setScreenHistory(['register_choose_type']);
   };
 
-  const saveNewPerson = async (person: NewPerson) => {
-    const record: PersonRecord = {
-      ...person,
-      id: uuid(),
-      code: recordCode(site),
-      site,
-      type: registrationType,
-      created_at: new Date().toISOString(),
-      registered_by: volunteerName
-    };
-    await db.transaction('rw', db.records, db.outbox, async () => {
-      await db.records.add(record);
-      await db.outbox.add({ id: record.id, kind: 'record', payload: record });
-    });
+  const saveNewPerson = async (person: NewPerson, type: RecordType = registrationType) => {
+    const record = await saveRecord(db, site, type, volunteerName, person);
     setLastSavedId(record.id);
     syncNow();
     return record;
   };
 
   const addEvent = async (kind: MatchEventKind, foundId: string, seekingId: string, reason?: string) => {
-    const event: MatchEvent = {
-      id: uuid(),
-      kind,
-      found_id: foundId,
-      seeking_id: seekingId,
-      site,
-      officer: volunteerName,
-      reason: reason?.trim() || null,
-      created_at: new Date().toISOString()
-    };
-    await db.transaction('rw', db.events, db.outbox, async () => {
-      await db.events.add(event);
-      await db.outbox.add({ id: event.id, kind: 'event', payload: event });
-    });
+    await saveEvent(db, site, volunteerName, kind, foundId, seekingId, reason);
     syncNow();
   };
 

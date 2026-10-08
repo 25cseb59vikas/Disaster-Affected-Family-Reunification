@@ -3,11 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
-import { siteName } from '../sites';
+import { SITES, siteName } from '../sites';
 import { eventsByPair, pairState } from '../matchStatus';
 import type { PersonRecord, SiteId, Suggestion } from '../types';
 
-interface Case {
+export interface Case {
   key: string;
   rank: number;
   title: string;
@@ -19,7 +19,8 @@ interface Case {
 }
 
 // Simple rules, most urgent first. Each case says why it is on the list.
-function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggestion[], events: ReturnType<typeof eventsByPair>) {
+// site = null: every site (the authority console).
+export function buildCases(site: SiteId | null, records: PersonRecord[], suggestions: Suggestion[], events: ReturnType<typeof eventsByPair>) {
   const byId = new Map(records.map(r => [r.id, r]));
   const states = new Map(suggestions.map(s => [s.id, pairState(events.get(s.id) ?? [])]));
   const reunited = new Set<string>();
@@ -33,7 +34,7 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
 
   const cases: Case[] = [];
   for (const r of records) {
-    if (r.type !== 'found' || r.site !== site || reunited.has(r.id)) continue;
+    if (r.type !== 'found' || (site && r.site !== site) || reunited.has(r.id)) continue;
     const detail = [r.age_band, r.clothing_marks].filter(Boolean).join(' · ') || r.code;
     if (r.age_band === 'Under 12') {
       cases.push({ key: `child-${r.id}`, rank: 0, title: r.name ?? 'Child, name not known', reason: 'Child, no family located yet',
@@ -46,10 +47,13 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
   for (const s of suggestions) {
     const st = states.get(s.id)!;
     const familyCheck = st.status === 'confirmed';
-    const waiting = familyCheck || ((st.status === 'partly_confirmed' || (st.status === 'open' && s.band === 'Strong')) && !st.confirmedBy[site]);
+    const waiting =
+      familyCheck || ((st.status === 'partly_confirmed' || (st.status === 'open' && s.band === 'Strong')) && !(site && st.confirmedBy[site]));
     if (!waiting) continue;
     const f = byId.get(s.found_id);
-    const other = Object.keys(st.confirmedBy)[0];
+    const confirmed = SITES.filter(x => st.confirmedBy[x.id]);
+    const other = confirmed[0]?.id ?? '';
+    const missing = SITES.filter(x => !st.confirmedBy[x.id]).map(x => x.name).join(' and ');
     cases.push({
       key: `confirm-${s.id}`,
       rank: 2,
@@ -57,7 +61,7 @@ function buildCases(site: SiteId, records: PersonRecord[], suggestions: Suggesti
       reason: familyCheck
         ? 'Both sites confirmed: ask the family question'
         : st.status === 'partly_confirmed'
-          ? `Confirmed at ${siteName(other)}, waiting for you`
+          ? `Confirmed at ${siteName(other)}, waiting for ${site ? 'you' : missing}`
           : 'Strong match waiting for confirmation',
       reasonColor: 'text-civilBlue',
       detail: `Match score ${s.score}`,

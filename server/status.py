@@ -4,7 +4,10 @@ from fastapi import APIRouter, HTTPException
 
 from . import store
 
-SITE_NAMES = {"camp-a": "Camp A", "hospital-b": "Hospital B"}
+# The two officer sites that must both confirm. The authority desk can register people and endorse
+# a match, and it is a help desk, but its confirmation is not one of the two.
+OFFICER_SITES = {"camp-a", "hospital-b"}
+SITE_NAMES = {"camp-a": "Camp A", "hospital-b": "Hospital B", "authority": "Authority desk"}
 
 router = APIRouter()
 
@@ -20,7 +23,7 @@ def verified(events: list[dict]) -> bool:
             confirmed.add(e["site"])
         elif e["kind"] == "family_mismatch":
             confirmed.clear()
-        elif e["kind"] == "family_match" and confirmed >= set(SITE_NAMES):
+        elif e["kind"] == "family_match" and confirmed >= OFFICER_SITES:
             return True
     return False
 
@@ -48,5 +51,5 @@ def family_status(code: str):
                    for s in store.visible_suggestions())
     # Until a match is confirmed, only the site where this record was registered is shown.
     return {"status": "checking" if checking else "searching",
-            # None for records from the phone line, which has no help desk of its own.
+            # None for records from the phone line or family app, which have no help desk of their own.
             "help_desk": SITE_NAMES.get(record["site"])}

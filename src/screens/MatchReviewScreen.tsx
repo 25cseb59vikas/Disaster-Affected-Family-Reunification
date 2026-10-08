@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Check, Circle, HelpCircle, Minus, Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
-import { SITES, siteName } from '../sites';
+import { AUTHORITY, SITES, siteName } from '../sites';
 import { familyQuestion, pairState } from '../matchStatus';
 import type { PersonRecord } from '../types';
 
@@ -49,7 +49,7 @@ const RecordColumn: React.FC<{ r?: PersonRecord; title: string; showPlace: boole
   );
 };
 
-const EvidenceList: React.FC<{ title: string; items: string[]; icon: React.ReactNode; empty: string }> = ({ title, items, icon, empty }) => (
+export const EvidenceList: React.FC<{ title: string; items: string[]; icon: React.ReactNode; empty: string }> = ({ title, items, icon, empty }) => (
   <section className="mb-3">
     <h2 className="text-sm font-medium text-navy-muted mb-1">{title}</h2>
     {items.length ? (
@@ -67,7 +67,7 @@ const EvidenceList: React.FC<{ title: string; items: string[]; icon: React.React
   </section>
 );
 
-const NoteBox: React.FC<{ id: string; label: string; submitLabel: string; onSubmit: (note: string) => void; required: string }> = ({
+export const NoteBox: React.FC<{ id: string; label: string; submitLabel: string; onSubmit: (note: string) => void; required: string }> = ({
   id,
   label,
   submitLabel,
@@ -296,6 +296,13 @@ export const MatchReviewScreen: React.FC = () => {
               </li>
             );
           })}
+          {state.confirmedBy[AUTHORITY.id] && (
+            <li className="flex items-center gap-2 text-base">
+              <Check className="w-5 h-5 shrink-0 text-verified" strokeWidth={1.75} />
+              <span className="min-w-0 flex-1">Authority console accepted</span>
+              <span className="text-sm shrink-0 text-verified">{state.confirmedBy[AUTHORITY.id]!.officer}</span>
+            </li>
+          )}
           <li className="flex items-center gap-2 text-base">
             {state.verifiedBy ? <Check className="w-5 h-5 shrink-0 text-verified" strokeWidth={1.75} /> : <Circle className="w-5 h-5 shrink-0 text-navy-muted" strokeWidth={1.75} />}
             <span className="min-w-0 flex-1">Family check</span>
