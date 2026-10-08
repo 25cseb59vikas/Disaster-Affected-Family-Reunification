@@ -160,10 +160,24 @@ Test with sample clips (server must be running): `.venv\Scripts\python server\te
 
 ## Sync, test data and matching
 
-- One dev server: `npm run dev` → http://localhost:3000 (volunteer app), http://localhost:3000/status (family status page).
-- Link simulator for sync between sites: http://localhost:8000/sim (voice is not affected).
+- One dev server: `npm run dev` → https://localhost:3000 (volunteer app), https://localhost:3000/status (family status
+  page). It uses a self-signed certificate: accept the browser warning once.
+- Link panel for sync between sites: http://localhost:8000/sim (also https://localhost:3000/api/sim): presets, live
+  traffic counters, and **Reset demo**, which reloads the test data and makes open apps clear both sites' local data.
 - Test data: `.venv\Scripts\python -m server.testdata` (writes `server/testdata/`), then
   `.venv\Scripts\python -m server.load_testdata --reset` to load it; each site receives it on its next sync.
 - Matching quality: `.venv\Scripts\python -m server.evaluate`. Weights are in `server/match_config.py`.
-- Server data lives in `server/data/reunite.db` (not in git). After `--reset`, clear site data in the browser
-  (DevTools → Application → Storage) so old local events do not linger.
+- Server data lives in `server/data/reunite.db` (not in git). After `load_testdata --reset` from the command line,
+  clear site data in the browser (DevTools → Application → Storage); the Reset demo button does this for you.
+
+## On a phone (same Wi-Fi)
+
+1. Start the voice server and `npm run dev` on the laptop. Vite prints the network URL, e.g. `https://192.168.23.155:3000`.
+2. Open that URL on the phone and accept the certificate warning (self-signed). HTTPS is what allows the microphone.
+3. Everything goes through `/api` on the same address: voice, sync, family status and `/api/sim`.
+
+If the phone cannot connect, allow the port in Windows Firewall (in an administrator terminal):
+
+```
+netsh advfirewall firewall add rule name="Reunite dev server 3000" dir=in action=allow protocol=TCP localport=3000 profile=any
+```
