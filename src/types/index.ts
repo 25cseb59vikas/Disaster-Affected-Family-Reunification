@@ -6,7 +6,6 @@ export type ScreenId =
   | 'saved'
   | 'suggested_matches'
   | 'match_review'
-  | 'family_status_portal'
   | 'search_records'
   | 'priority_cases';
 
@@ -86,31 +85,4 @@ export interface Suggestion {
 export interface MetaRow {
   key: string;
   value: number | string;
-}
-
-// Legacy shape still used by the Review and Priority screens until they move to suggestions.
-export interface MatchPair {
-  id?: number;
-  matchId: string;
-  foundPerson: {
-    name: string;
-    age: number | string;
-    photoUrl: string;
-    village: string;
-    relativeName: string;
-    site: string;
-  };
-  searchedPerson: {
-    name: string;
-    age: number | string;
-    photoUrl: string;
-    village: string;
-    relativeName: string;
-    site: string;
-  };
-  score: number;
-  scoreLabel: string;
-  reasons: string[];
-  step: 1 | 2 | 3 | 4;
-  status: 'pending' | 'reviewing' | 'verified' | 'dismissed';
 }

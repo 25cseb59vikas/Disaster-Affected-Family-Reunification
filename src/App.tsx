@@ -7,7 +7,6 @@ import { VerifyDetailsScreen } from './screens/VerifyDetailsScreen';
 import { SavedScreen } from './screens/SavedScreen';
 import { SuggestedMatchesScreen } from './screens/SuggestedMatchesScreen';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
-import { FamilyStatusPortalScreen } from './screens/FamilyStatusPortalScreen';
 import { SearchRecordsScreen } from './screens/SearchRecordsScreen';
 import { PriorityCasesScreen } from './screens/PriorityCasesScreen';
 import type { ScreenId } from './types';
@@ -31,8 +30,6 @@ export const AppContent: React.FC = () => {
         return <SuggestedMatchesScreen />;
       case 'match_review':
         return <MatchReviewScreen />;
-      case 'family_status_portal':
-        return <FamilyStatusPortalScreen />;
       case 'search_records':
         return <SearchRecordsScreen />;
       case 'priority_cases':
@@ -58,7 +55,6 @@ const DEBUG_SCREENS: Array<[ScreenId, string]> = [
   ['saved', 'Saved'],
   ['suggested_matches', 'Matches'],
   ['match_review', 'Review'],
-  ['family_status_portal', 'Family'],
   ['search_records', 'Search'],
   ['priority_cases', 'Priority']
 ];

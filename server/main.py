@@ -35,6 +35,7 @@ if os.name == "nt":
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
+from .status import router as status_router
 from .sync import router as sync_router
 
 log = logging.getLogger("voice")
@@ -146,6 +147,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 app.include_router(sync_router)
+app.include_router(status_router)
 
 
 def empty_fields() -> dict:

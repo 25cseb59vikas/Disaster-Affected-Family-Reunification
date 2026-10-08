@@ -157,3 +157,13 @@ Settings (environment variables):
 The front end reaches the server through the Vite proxy at `/api`.
 
 Test with sample clips (server must be running): `.venv\Scripts\python server\test_voice.py`
+
+## Sync, test data and matching
+
+- One dev server: `npm run dev` → http://localhost:3000 (volunteer app), http://localhost:3000/status (family status page).
+- Link simulator for sync between sites: http://localhost:8000/sim (voice is not affected).
+- Test data: `.venv\Scripts\python -m server.testdata` (writes `server/testdata/`), then
+  `.venv\Scripts\python -m server.load_testdata --reset` to load it; each site receives it on its next sync.
+- Matching quality: `.venv\Scripts\python -m server.evaluate`. Weights are in `server/match_config.py`.
+- Server data lives in `server/data/reunite.db` (not in git). After `--reset`, clear site data in the browser
+  (DevTools → Application → Storage) so old local events do not linger.
