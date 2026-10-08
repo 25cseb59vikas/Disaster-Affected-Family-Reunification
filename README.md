@@ -118,3 +118,24 @@ cmd /c npm run build
 ```bash
 cmd /c npm run preview
 ```
+
+---
+
+## Local voice intake server
+
+Runs entirely on this laptop: faster-whisper for speech to text, Ollama for text to fields.
+
+```bash
+# one-time
+.venv\Scripts\pip install -r server/requirements.txt
+ollama pull llama3.2:3b
+
+# run (from the project root), then start the front end with `npm run dev`
+.venv\Scripts\python -m uvicorn server.main:app --port 8000
+```
+
+Settings (environment variables): `WHISPER_MODEL` (default `small`), `WHISPER_DEVICE` (`auto`/`cuda`/`cpu`),
+`OLLAMA_MODEL` (default `llama3.2:3b`), `OLLAMA_URL`, `OLLAMA_TIMEOUT` (seconds, default 15).
+The front end reaches the server through the Vite proxy at `/api`.
+
+Test with sample clips: `.venv\Scripts\python server\test_voice.py`

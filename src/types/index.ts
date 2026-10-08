@@ -11,16 +11,27 @@ export type ScreenId =
 
 export type RegistrationType = 'found' | 'missing';
 
+export type Gender = 'Male' | 'Female' | 'Other' | 'Unknown';
+export type AgeBand = 'Under 12' | '12–18' | '19–59' | '60+';
+
+export interface LookingFor {
+  relation: string;
+  name: string | null;
+}
+
 export interface PersonRecord {
   id?: number;
   syncId: string;
   type: RegistrationType; // 'found' (Person found here) or 'missing' (Looking for someone)
   name: string;
-  gender: 'Male' | 'Female' | 'Other';
-  ageBand: 'Under 12' | '12–18' | '19–59' | '60+';
+  gender: Gender;
+  ageBand: AgeBand | null;
   approxAge?: number;
   village: string;
   relativeName: string; // Father / spouse
+  relativeRelation?: string;
+  foundWhere?: string;
+  lookingFor?: LookingFor[];
   relativeNeedsCheck?: boolean; // Amber highlight "Please check"
   clothingMarks: string;
   hasMissingFamily: boolean;
@@ -28,7 +39,7 @@ export interface PersonRecord {
   status: 'Registered' | 'Possible match' | 'Reunited' | 'Under Review';
   site: string;
   registeredBy: string;
-  transcriptSnippet?: string;
+  transcript?: string;
   createdAt: number;
   synced: boolean;
   isUrgent?: boolean;

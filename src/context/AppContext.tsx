@@ -1,20 +1,38 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ScreenId, RegistrationType, MatchPair, PersonRecord } from '../types';
+import type { ScreenId, RegistrationType, MatchPair, PersonRecord, Gender, AgeBand, LookingFor } from '../types';
 import { db, seedInitialData } from '../db/database';
 
-interface VoiceDraft {
+// Fields filled from the voice server (or empty when typing). `unsure` lists
+// the server's field names that the volunteer should check.
+export interface VoiceDraft {
   transcript: string;
   name: string;
-  gender: 'Male' | 'Female' | 'Other';
-  ageBand: 'Under 12' | '12–18' | '19–59' | '60+';
-  approxAge?: number;
+  gender: Gender;
+  ageBand: AgeBand | null;
   village: string;
   relativeName: string;
-  relativeNeedsCheck: boolean;
+  relativeRelation: string;
   clothingMarks: string;
-  hasMissingFamily: boolean;
-  photoUrl?: string;
+  foundWhere: string;
+  lookingFor: LookingFor[];
+  unsure: string[];
+  notice: string;
 }
+
+export const emptyDraft: VoiceDraft = {
+  transcript: '',
+  name: '',
+  gender: 'Unknown',
+  ageBand: null,
+  village: '',
+  relativeName: '',
+  relativeRelation: '',
+  clothingMarks: '',
+  foundWhere: '',
+  lookingFor: [],
+  unsure: [],
+  notice: ''
+};
 
 interface AppContextType {
   currentScreen: ScreenId;
@@ -41,20 +59,6 @@ interface AppContextType {
   saveNewPerson: (person: Partial<PersonRecord>) => Promise<number>;
 }
 
-const defaultDraft: VoiceDraft = {
-  transcript: "Transcript: Murugan, around 35 years old, male, from Kilvelur, father Ramasamy, wearing blue shirt and black pants",
-  name: "Murugan",
-  gender: "Male",
-  ageBand: "19–59",
-  approxAge: 35,
-  village: "Kilvelur",
-  relativeName: "Ramasamy",
-  relativeNeedsCheck: true, // System is unsure about father's name, amber check
-  clothingMarks: "Blue shirt, black pants, scar on left eyebrow",
-  hasMissingFamily: false,
-  photoUrl: ""
-};
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,7 +69,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [registrationType, setRegistrationType] = useState<RegistrationType>('found');
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [offlineCount, setOfflineCount] = useState<number>(12);
-  const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(defaultDraft);
+  const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(emptyDraft);
   const [selectedMatch, setSelectedMatch] = useState<MatchPair | null>(null);
 
   useEffect(() => {
@@ -88,21 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const canGoBack = screenHistory.length > 1;
 
-  const resetVoiceDraft = () => {
-    setVoiceDraft({
-      transcript: "",
-      name: "",
-      gender: "Male",
-      ageBand: "19–59",
-      approxAge: undefined,
-      village: "",
-      relativeName: "",
-      relativeNeedsCheck: false,
-      clothingMarks: "",
-      hasMissingFamily: false,
-      photoUrl: ""
-    });
-  };
+  const resetVoiceDraft = () => setVoiceDraft(emptyDraft);
 
   const syncOfflineQueue = async () => {
     // Simulate syncing Dexie offline queue with central disaster registry
@@ -118,19 +108,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       syncId: `rec-${Date.now()}`,
       type: registrationType,
       name: person.name || 'Unnamed Person',
-      gender: person.gender || 'Male',
-      ageBand: person.ageBand || '19–59',
-      approxAge: person.approxAge,
+      gender: person.gender || 'Unknown',
+      ageBand: person.ageBand ?? null,
       village: person.village || 'Unknown',
       relativeName: person.relativeName || '',
-      relativeNeedsCheck: person.relativeNeedsCheck ?? false,
+      relativeRelation: person.relativeRelation,
+      foundWhere: person.foundWhere,
+      lookingFor: person.lookingFor,
       clothingMarks: person.clothingMarks || '',
       hasMissingFamily: person.hasMissingFamily ?? false,
       photoUrl: person.photoUrl,
       status: 'Possible match',
       site: currentSite,
       registeredBy: volunteerName,
-      transcriptSnippet: person.transcriptSnippet,
+      transcript: person.transcript,
       createdAt: Date.now(),
       synced: false
     };

@@ -5,6 +5,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    // Same-origin calls to the local voice server, so they also work over HTTPS from a phone.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: path => path.replace(/^\/api/, '')
+      }
+    }
   }
 });
