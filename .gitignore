@@ -6,3 +6,4 @@ __pycache__/
 server/models/
 .env
 *.local
+server.log

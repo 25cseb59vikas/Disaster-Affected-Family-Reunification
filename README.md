@@ -123,19 +123,37 @@ cmd /c npm run preview
 
 ## Local voice intake server
 
-Runs entirely on this laptop: faster-whisper for speech to text, Ollama for text to fields.
+Runs entirely on this laptop: faster-whisper for speech to text, Ollama (llama3.2:3b) for text to fields.
 
 ```bash
 # one-time
 .venv\Scripts\pip install -r server/requirements.txt
+.venv\Scripts\pip install -r server/requirements-gpu.txt   # NVIDIA GPU only (~1.2 GB download)
 ollama pull llama3.2:3b
 
 # run (from the project root), then start the front end with `npm run dev`
 .venv\Scripts\python -m uvicorn server.main:app --port 8000
 ```
 
-Settings (environment variables): `WHISPER_MODEL` (default `small`), `WHISPER_DEVICE` (`auto`/`cuda`/`cpu`),
-`OLLAMA_MODEL` (default `llama3.2:3b`), `OLLAMA_URL`, `OLLAMA_TIMEOUT` (seconds, default 15).
+On first start the speech model downloads into `server/models/` (large-v3-turbo ~1.6 GB for GPU,
+small ~480 MB for CPU). If Hugging Face downloads stall, set `HF_HUB_DISABLE_XET=1`.
+With both models loaded the GPU uses about 4.9 GB.
+
+Settings (environment variables):
+
+| Variable | Default | |
+|---|---|---|
+| `WHISPER_GPU_MODEL` | `large-v3-turbo` | Model used on the GPU |
+| `WHISPER_GPU_COMPUTE` | `float16` | `int8_float16` if GPU memory is tight |
+| `WHISPER_CPU_MODEL` | `small` | Fallback model (int8) when the GPU is not usable |
+| `WHISPER_DEVICE` | `auto` | `auto`, `cuda` or `cpu` |
+| `WHISPER_LANGUAGE` | `en` | `auto` to let Whisper detect the language |
+| `WHISPER_PROMPT` | camp names list | Biases spelling of names and villages |
+| `OLLAMA_MODEL` | `llama3.2:3b` | |
+| `OLLAMA_URL` | `http://127.0.0.1:11434` | |
+| `OLLAMA_TIMEOUT` | `15` | Seconds; on timeout the transcript is returned with empty fields |
+| `OLLAMA_KEEP_ALIVE` | `60m` | How long Ollama keeps the model loaded |
+
 The front end reaches the server through the Vite proxy at `/api`.
 
-Test with sample clips: `.venv\Scripts\python server\test_voice.py`
+Test with sample clips (server must be running): `.venvScriptspython server	est_voice.py`

@@ -10,7 +10,7 @@ from pathlib import Path
 import av
 import httpx
 
-URL = "http://localhost:8000/voice/extract"
+URL = "http://127.0.0.1:8000/voice/extract"
 SAMPLES = Path(__file__).parent / "samples"
 
 

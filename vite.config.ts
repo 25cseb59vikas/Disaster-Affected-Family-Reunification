@@ -9,7 +9,7 @@ export default defineConfig({
     // Same-origin calls to the local voice server, so they also work over HTTPS from a phone.
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         rewrite: path => path.replace(/^\/api/, '')
       }
     }
