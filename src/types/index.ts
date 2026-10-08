@@ -11,7 +11,7 @@ export type ScreenId =
   | 'search_records'
   | 'priority_cases';
 
-export type SiteId = 'camp-a' | 'hospital-b';
+export type SiteId = 'camp-a' | 'hospital-b' | 'phone-line'; // phone-line: simulated phone registrations, not an officer site
 export type RecordType = 'found' | 'seeking';
 export type Gender = 'male' | 'female' | 'other' | 'unknown';
 export type AgeBand = 'Under 12' | '12–18' | '19–59' | '60+';

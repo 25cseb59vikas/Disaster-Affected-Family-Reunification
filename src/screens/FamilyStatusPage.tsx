@@ -19,7 +19,7 @@ const STATUS_BORDER: Record<Status, string> = {
 /** Public page for families: opened at /status, with the record code typed in or passed as ?code=. */
 export const FamilyStatusPage: React.FC = () => {
   const [code, setCode] = useState(() => new URLSearchParams(location.search).get('code') ?? '');
-  const [result, setResult] = useState<{ status: Status; help_desk: string } | null>(null);
+  const [result, setResult] = useState<{ status: Status; help_desk: string | null } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +55,7 @@ export const FamilyStatusPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [en, ta] = result ? SENTENCES[result.status](result.help_desk) : ['', ''];
+  const [en, ta] = result ? SENTENCES[result.status](result.help_desk ?? '') : ['', ''];
 
   return (
     <Screen
@@ -95,7 +95,7 @@ export const FamilyStatusPage: React.FC = () => {
 
       <div className="card">
         <p className="text-sm text-navy-muted">Help desk</p>
-        <p className="text-base text-navy">{result ? `Help desk at ${result.help_desk}` : 'At the site where you registered'}</p>
+        <p className="text-base text-navy">{result?.help_desk ? `Help desk at ${result.help_desk}` : result ? 'Any help desk can look up your code' : 'At the site where you registered'}</p>
         <p className="text-sm text-navy-muted mt-2">Helpline</p>
         <p className="text-base text-navy">Number to be added</p>
       </div>

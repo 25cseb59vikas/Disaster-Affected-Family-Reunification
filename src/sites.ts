@@ -1,11 +1,14 @@
 import type { SiteId } from './types';
 
+// Officer sites. Every one of them confirms a match; the phone line is not one of them.
 export const SITES: Array<{ id: SiteId; name: string; helper: string; codePrefix: string }> = [
   { id: 'camp-a', name: 'Camp A', helper: 'Relief camp', codePrefix: 'A' },
   { id: 'hospital-b', name: 'Hospital B', helper: 'Hospital', codePrefix: 'B' }
 ];
 
-export const siteName = (id: string) => SITES.find(s => s.id === id)?.name ?? id;
+export const PHONE_LINE = { id: 'phone-line' as SiteId, name: 'Phone line', codePrefix: 'P' };
+
+export const siteName = (id: string) => (id === PHONE_LINE.id ? PHONE_LINE.name : SITES.find(s => s.id === id)?.name ?? id);
 
 /** RFC 4122 v4 UUID. crypto.randomUUID needs HTTPS, so build it from getRandomValues (works on plain HTTP too). */
 export function uuid(): string {
@@ -20,7 +23,7 @@ export function uuid(): string {
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export function recordCode(site: SiteId): string {
-  const prefix = SITES.find(s => s.id === site)?.codePrefix ?? 'X';
+  const prefix = site === PHONE_LINE.id ? PHONE_LINE.codePrefix : SITES.find(s => s.id === site)?.codePrefix ?? 'X';
   const r = crypto.getRandomValues(new Uint8Array(4));
   return `${prefix}-${[...r].map(x => CODE_CHARS[x % CODE_CHARS.length]).join('')}`;
 }

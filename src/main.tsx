@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { AppProvider } from './context/AppContext';
 import { AppContent } from './App';
 import { FamilyStatusPage } from './screens/FamilyStatusPage';
+import { PhoneLinePage } from './screens/PhoneLinePage';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
@@ -13,6 +14,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     {/* The public family page stands alone: no volunteer state, no sync. */}
     {location.pathname.startsWith('/status') ? (
       <FamilyStatusPage />
+    ) : location.pathname.startsWith('/phone') ? (
+      <PhoneLinePage />
     ) : (
       <AppProvider>
         <AppContent />

@@ -32,7 +32,7 @@ def _add_cuda_dll_dirs() -> None:
 if os.name == "nt":
     _add_cuda_dll_dirs()
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
 from .status import router as status_router
@@ -318,3 +318,22 @@ def voice_extract(audio: UploadFile = File(...), record_type: str = Form(...)):
         "llm_ok": llm_ok,
         "timings": {"stt_ms": stt_ms, "llm_ms": llm_ms},
     }
+
+
+@app.post("/voice/extract_text")
+def voice_extract_text(body: dict = Body(...)):
+    """Same field extraction as /voice/extract, for text already transcribed (e.g. the phone line's answers)."""
+    transcript = str(body.get("text") or "").strip()
+    record_type = body.get("record_type", "seeking")
+    if record_type not in ("found", "seeking"):
+        raise HTTPException(422, "record_type must be 'found' or 'seeking'")
+    t1 = time.perf_counter()
+    fields = extract_fields(transcript, record_type) if transcript else None
+    llm_ms = round((time.perf_counter() - t1) * 1000)
+    llm_ok = fields is not None
+    fields = fields or empty_fields()
+    ages = stated_ages(transcript)
+    if len(ages) == 1:
+        fields["age_band"] = band_for_age(ages.pop())
+    return {"transcript": transcript, "fields": fields, "unsure": unsure_fields(fields, transcript),
+            "llm_ok": llm_ok, "timings": {"stt_ms": 0, "llm_ms": llm_ms}}

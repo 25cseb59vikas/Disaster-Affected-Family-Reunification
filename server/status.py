@@ -48,4 +48,5 @@ def family_status(code: str):
                    for s in store.visible_suggestions())
     # Until a match is confirmed, only the site where this record was registered is shown.
     return {"status": "checking" if checking else "searching",
-            "help_desk": SITE_NAMES.get(record["site"], record["site"])}
+            # None for records from the phone line, which has no help desk of its own.
+            "help_desk": SITE_NAMES.get(record["site"])}
