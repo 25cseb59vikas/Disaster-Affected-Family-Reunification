@@ -13,8 +13,9 @@ import type {
   SiteId
 } from '../types';
 import { getMeta, siteDb, type SiteDatabase } from '../db/database';
+import { SITES } from '../sites';
 import { recordCode, uuid } from '../sites';
-import { serverReachable, syncOnce } from '../sync';
+import { serverHealth, syncOnce } from '../sync';
 
 // Fields filled from the voice server (or empty when typing). `unsure` lists
 // the server's field names that the volunteer should check.
@@ -54,6 +55,7 @@ export type SyncStatus = 'offline' | 'syncing' | 'synced';
 
 const SYNC_EVERY_MS = 15000;
 const SITE_KEY = 'reunite.site';
+const EPOCH_KEY = 'reunite.demoEpoch';
 const VOLUNTEER_KEY = 'reunite.volunteer';
 
 const stored = (key: string) => {
@@ -84,7 +86,7 @@ interface AppContextType {
   setRegistrationType: (type: RecordType) => void;
   syncStatus: SyncStatus;
   waitingCount: number;
-  bytesSent: number;
+  lastBytesSent: number;
   syncNow: () => Promise<void>;
   voiceDraft: VoiceDraft;
   setVoiceDraft: React.Dispatch<React.SetStateAction<VoiceDraft>>;
@@ -110,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const db = siteDb(site);
   const waitingCount = useLiveQuery(() => db.outbox.count(), [db], 0);
-  const bytesSent = useLiveQuery(() => getMeta(db, 'bytes_sent', 0), [db], 0);
+  const lastBytesSent = useLiveQuery(() => getMeta(db, 'last_bytes_sent', 0), [db], 0);
 
   // Remove the database from the old prototype (fake seed data).
   useEffect(() => {
@@ -135,10 +137,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentSite.current === target) setSyncStatus(s);
     };
     try {
-      if (!(await serverReachable())) {
+      const health = await serverHealth();
+      if (!health) {
         setStatus('offline');
         return;
       }
+      // "Reset demo" on /sim: clear both sites' local data before pushing anything old.
+      const seen = stored(EPOCH_KEY);
+      if (health.demo_epoch && seen && seen !== health.demo_epoch) {
+        store(EPOCH_KEY, health.demo_epoch);
+        await Promise.all(SITES.map(x => siteDb(x.id).delete()));
+        location.reload();
+        return;
+      }
+      if (health.demo_epoch && !seen) store(EPOCH_KEY, health.demo_epoch);
       setStatus('syncing');
       await syncOnce(targetDb, target);
       setStatus('synced');
@@ -230,7 +242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setRegistrationType,
         syncStatus,
         waitingCount,
-        bytesSent,
+        lastBytesSent,
         syncNow,
         voiceDraft,
         setVoiceDraft,

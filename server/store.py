@@ -48,6 +48,18 @@ def _next_seq(c: sqlite3.Connection) -> int:
     return seq
 
 
+def get_meta(key: str) -> str | None:
+    row = conn().execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_meta(key: str, value: str) -> None:
+    with _lock:
+        c = conn()
+        c.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", (key, value))
+        c.commit()
+
+
 def current_seq() -> int:
     row = conn().execute("SELECT value FROM meta WHERE key = 'seq'").fetchone()
     return int(row["value"]) if row else 0

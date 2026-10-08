@@ -36,7 +36,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
 from .status import router as status_router
-from .sync import router as sync_router
+from .sync import demo_epoch, router as sync_router
 
 log = logging.getLogger("voice")
 logging.basicConfig(level=logging.INFO)
@@ -274,7 +274,7 @@ def health():
         ollama_ok = False
     return {"status": "ok", "whisper_model": whisper.get("name"), "device": whisper.get("device"),
             "compute_type": whisper.get("compute_type"), "language": WHISPER_LANGUAGE,
-            "ollama": ollama_ok, "ollama_model": OLLAMA_MODEL}
+            "ollama": ollama_ok, "ollama_model": OLLAMA_MODEL, "demo_epoch": demo_epoch()}
 
 
 @app.post("/voice/extract")

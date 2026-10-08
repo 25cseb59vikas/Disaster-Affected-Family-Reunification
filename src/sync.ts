@@ -3,13 +3,13 @@ import type { MatchEvent, PersonRecord, SiteId, Suggestion } from './types';
 
 const API = '/api';
 
-/** True when the local server answers (voice and sync both run through it). */
-export async function serverReachable(): Promise<boolean> {
+/** The local server's health answer, or null if it cannot be reached (voice and sync both run through it). */
+export async function serverHealth(): Promise<{ demo_epoch?: string } | null> {
   try {
     const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(5000) });
-    return res.ok;
+    return res.ok ? await res.json() : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -38,8 +38,9 @@ export async function syncOnce(db: SiteDatabase, site: SiteId): Promise<number> 
     const { accepted } = (await res.json()) as { accepted: string[] };
     await db.outbox.bulkDelete(accepted);
     bytesSent = new Blob([body]).size;
-    await setMeta(db, 'bytes_sent', (await getMeta(db, 'bytes_sent', 0)) + bytesSent);
   }
+
+  await setMeta(db, 'last_bytes_sent', bytesSent);
 
   const since = await getMeta(db, 'cursor', 0);
   const res = await fetch(`${API}/sync/pull?since=${since}&site=${site}`, { signal: AbortSignal.timeout(30000) });

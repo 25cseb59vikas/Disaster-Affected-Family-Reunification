@@ -8,10 +8,10 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
-  const { site, volunteerName, syncStatus, waitingCount, bytesSent, syncNow, goBack, canGoBack, navigateTo } = useApp();
+  const { site, volunteerName, syncStatus, waitingCount, lastBytesSent, syncNow, goBack, canGoBack, navigateTo } = useApp();
   const isSyncing = syncStatus === 'syncing';
   const offline = syncStatus === 'offline';
-  const kb = bytesSent / 1024;
+  const kb = lastBytesSent / 1024;
 
   const statusText = isSyncing
     ? 'Syncing'
@@ -19,7 +19,7 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
       ? waitingCount > 0 ? `Offline · ${waitingCount} waiting` : 'Offline'
       : waitingCount > 0
         ? `${waitingCount} waiting`
-        : bytesSent > 0 ? `Synced · ${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB sent` : 'Synced';
+        : `Synced · ${lastBytesSent === 0 ? '0' : kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB sent`;
 
   return (
     <header className="flex-none">
