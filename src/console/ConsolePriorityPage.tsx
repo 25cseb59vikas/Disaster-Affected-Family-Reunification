@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { buildCases } from '../screens/PriorityCasesScreen';
 import { siteName } from '../sites';
-import { linkProps } from './route';
+import { linkProps } from '../route';
 import { useConsoleData } from './data';
 
 /** /console/priority: the field app's priority rules, across every site. */

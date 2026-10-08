@@ -5,7 +5,7 @@ import { VoiceCapture } from '../intake/VoiceCapture';
 import { DetailsForm } from '../intake/DetailsForm';
 import type { NewPerson } from '../records';
 import type { PersonRecord, RecordType } from '../types';
-import { linkProps } from './route';
+import { linkProps } from '../route';
 
 type Step = { at: 'type' } | { at: 'speak'; type: RecordType } | { at: 'details'; type: RecordType; draft: VoiceDraft } | { at: 'saved'; record: PersonRecord };
 

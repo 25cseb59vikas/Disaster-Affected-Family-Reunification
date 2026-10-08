@@ -16,9 +16,12 @@ const STATUS_BORDER: Record<Status, string> = {
   found: 'border-verified'
 };
 
-/** Public page for families: opened at /status, with the record code typed in or passed as ?code=. */
-export const FamilyStatusPage: React.FC = () => {
-  const [code, setCode] = useState(() => new URLSearchParams(location.search).get('code') ?? '');
+/**
+ * Status by record code: one sentence and a help desk, never record details.
+ * `onUrl` keeps the address bar in step with the code that was checked.
+ */
+export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: string) => void }> = ({ initialCode = '', onUrl }) => {
+  const [code, setCode] = useState(initialCode);
   const [result, setResult] = useState<{ status: Status; help_desk: string | null } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +43,7 @@ export const FamilyStatusPage: React.FC = () => {
         throw new Error(`HTTP ${res.status}`);
       } else {
         setResult(await res.json());
-        history.replaceState(null, '', `/status?code=${encodeURIComponent(c)}`);
+        onUrl?.(c);
       }
     } catch {
       setError('The status service cannot be reached right now. Please try again or ask at the help desk.');
@@ -51,24 +54,14 @@ export const FamilyStatusPage: React.FC = () => {
 
   useEffect(() => {
     if (code) check(code);
-    // Only on first load with ?code=
+    // Only on first load with a code
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [en, ta] = result ? SENTENCES[result.status](result.help_desk ?? '') : ['', ''];
 
   return (
-    <Screen
-      header={false}
-      width="narrow"
-      footer={
-        <button type="button" onClick={() => check()} disabled={loading} className="btn-primary">
-          {loading ? 'Checking…' : 'Check status'}
-        </button>
-      }
-    >
-      <h1 className="screen-title pt-4">Family status</h1>
-
+    <>
       <label htmlFor="record-code" className="field-label">
         Record code
       </label>
@@ -80,8 +73,11 @@ export const FamilyStatusPage: React.FC = () => {
         placeholder="e.g. A-7K3Q"
         autoCapitalize="characters"
         autoComplete="off"
-        className="input mb-4 uppercase"
+        className="input mb-3 uppercase"
       />
+      <button type="button" onClick={() => check()} disabled={loading} className="btn-primary mb-4">
+        {loading ? 'Checking…' : 'Check status'}
+      </button>
 
       {error && <p role="alert" className="card mb-3 bg-pending-bg border-pending-border text-base text-navy">{error}</p>}
 
@@ -100,6 +96,17 @@ export const FamilyStatusPage: React.FC = () => {
         <p className="text-sm text-navy-muted mt-2">Helpline</p>
         <p className="text-base text-navy">Number to be added</p>
       </div>
-    </Screen>
+    </>
   );
 };
+
+/** Public page for families: opened at /status, with the record code typed in or passed as ?code=. */
+export const FamilyStatusPage: React.FC = () => (
+  <Screen header={false} width="narrow">
+    <h1 className="screen-title pt-4">Family status</h1>
+    <StatusChecker
+      initialCode={new URLSearchParams(location.search).get('code') ?? ''}
+      onUrl={c => history.replaceState(null, '', `/status?code=${encodeURIComponent(c)}`)}
+    />
+  </Screen>
+);

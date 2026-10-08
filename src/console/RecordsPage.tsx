@@ -3,7 +3,7 @@ import { recordStatus, type SearchStatus } from '../matchStatus';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES, siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
 import type { PersonRecord } from '../types';
-import { go, linkProps } from './route';
+import { go, linkProps } from '../route';
 import { useConsoleData } from './data';
 
 export const STATUS_BADGE: Record<SearchStatus, string> = {

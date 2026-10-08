@@ -15,32 +15,37 @@ export async function serverHealth(): Promise<{ demo_epoch?: string } | null> {
 }
 
 /**
+ * Sends this device's outbox and removes what the server acknowledged. Returns the bytes sent.
+ * On its own (without a pull) for the family app, which must never download other people's records.
+ * Throws if the link is down; nothing is lost because the outbox is only cleared on acknowledgement.
+ */
+export async function pushOutbox(db: SiteDatabase, site: SiteId): Promise<number> {
+  const outbox = await db.outbox.toArray();
+  if (outbox.length === 0) return 0;
+  const body = JSON.stringify({
+    site,
+    records: outbox.filter(o => o.kind === 'record').map(o => o.payload),
+    events: outbox.filter(o => o.kind === 'event').map(o => o.payload)
+  });
+  const res = await fetch(`${API}/sync/push`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!res.ok) throw new Error(`push failed: HTTP ${res.status}`);
+  const { accepted } = (await res.json()) as { accepted: string[] };
+  await db.outbox.bulkDelete(accepted);
+  return new Blob([body]).size;
+}
+
+/**
  * Pushes the outbox, marks acknowledged items as sent (removes them), then pulls changes.
  * Throws if the link is down; nothing is lost because the outbox is only cleared on acknowledgement.
  * Returns the number of bytes pushed.
  */
 export async function syncOnce(db: SiteDatabase, site: SiteId): Promise<number> {
-  const outbox = await db.outbox.toArray();
-  let bytesSent = 0;
-
-  if (outbox.length > 0) {
-    const body = JSON.stringify({
-      site,
-      records: outbox.filter(o => o.kind === 'record').map(o => o.payload),
-      events: outbox.filter(o => o.kind === 'event').map(o => o.payload)
-    });
-    const res = await fetch(`${API}/sync/push`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      signal: AbortSignal.timeout(30000)
-    });
-    if (!res.ok) throw new Error(`push failed: HTTP ${res.status}`);
-    const { accepted } = (await res.json()) as { accepted: string[] };
-    await db.outbox.bulkDelete(accepted);
-    bytesSent = new Blob([body]).size;
-  }
-
+  const bytesSent = await pushOutbox(db, site);
   await setMeta(db, 'last_bytes_sent', bytesSent);
 
   const since = await getMeta(db, 'cursor', 0);

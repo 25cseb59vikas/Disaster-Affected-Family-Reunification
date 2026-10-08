@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES } from '../sites';
 import { saveRecord, type NewPerson } from '../records';
 import type { SiteId } from '../types';
-import { linkProps } from './route';
+import { linkProps } from '../route';
 import { useConsoleData, type ConsoleData } from './data';
 
 const ROWS: Array<{ id: SiteId; name: string }> = [...SITES, PHONE_LINE, FAMILY_APP, AUTHORITY];

@@ -5,7 +5,7 @@ import { AUTHORITY } from '../sites';
 import { switchRole } from '../role';
 import { DemoNotice } from '../components/DemoNotice';
 import { InstallButton } from '../components/InstallButton';
-import { linkProps, useRoute } from './route';
+import { linkProps, useRoute } from '../route';
 import { useConsoleData } from './data';
 import { OverviewPage } from './OverviewPage';
 import { MatchQueuePage } from './MatchQueuePage';

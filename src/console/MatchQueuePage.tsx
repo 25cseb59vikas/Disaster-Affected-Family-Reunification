@@ -5,7 +5,7 @@ import { AUTHORITY, SITES, siteName } from '../sites';
 import { familyQuestion, pairState, type PairStatus } from '../matchStatus';
 import { EvidenceList, NoteBox } from '../screens/MatchReviewScreen';
 import type { PersonRecord, Suggestion } from '../types';
-import { go, linkProps, useRoute } from './route';
+import { go, linkProps, useRoute } from '../route';
 import { personLabel, useConsoleData, type ConsoleData } from './data';
 
 export const MATCH_NOTICE = 'Matches are suggestions only. Authorised staff must verify identity and relationships before disclosure.';

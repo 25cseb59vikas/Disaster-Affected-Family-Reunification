@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { recordStatus } from '../matchStatus';
 import { siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
-import { linkProps } from './route';
+import { linkProps } from '../route';
 import { personLabel, useConsoleData } from './data';
 import { PAIR_STATUS } from './MatchQueuePage';
 import { STATUS_BADGE, statusLabel, Thumb } from './RecordsPage';

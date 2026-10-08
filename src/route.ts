@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Minimal router for /console/*: real URLs, so links, Back and refresh behave like a website.
+// Minimal router for /console/* and /family/*: real URLs, so links, Back and refresh behave like a website.
 const listeners = new Set<() => void>();
 
 export function go(path: string) {
@@ -25,7 +25,7 @@ export function useRoute() {
   return route;
 }
 
-/** A link that routes inside the console without reloading. */
+/** A link that routes inside the console or family app without reloading. */
 export function linkProps(path: string) {
   return {
     href: path,
