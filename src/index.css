@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Public Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #0F1B2D;
+  background-color: #F6F3EC;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #F6F3EC;
+  color: #0F1B2D;
+  /* Tabular figures for numbers as required by Stitch specs */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ensure minimum touch target for interactive elements */
+button, a, input, select {
+  touch-action: manipulation;
+}
+
+/* Strict left alignment rule from designMd */
+h1, h2, h3, h4, p, label {
+  text-align: left;
+}
