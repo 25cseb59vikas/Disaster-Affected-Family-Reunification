@@ -91,24 +91,29 @@ export const VerifyDetailsScreen: React.FC = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
+    const isFound = registrationType === 'found';
     await saveNewPerson({
-      name,
+      name: name.trim() || null,
       gender,
-      ageBand,
-      village,
-      relativeName,
-      relativeRelation: relativeRelation || undefined,
-      clothingMarks,
-      foundWhere: foundWhere || undefined,
-      lookingFor: lookingFor
-        .filter(p => p.relation.trim() || p.name?.trim())
-        .map(p => ({ relation: p.relation.trim(), name: p.name?.trim() || null })),
-      hasMissingFamily,
-      transcript: voiceDraft.transcript || undefined,
-      photoUrl
+      age_band: ageBand,
+      village: village.trim() || null,
+      relative_name: relativeName.trim() || null,
+      relative_relation: relativeRelation.trim() || null,
+      clothing_marks: clothingMarks.trim() || null,
+      found_where: isFound ? foundWhere.trim() || null : null,
+      household_id: null,
+      has_missing_family: isFound && hasMissingFamily,
+      looking_for:
+        isFound && hasMissingFamily
+          ? lookingFor
+              .filter(p => p.relation.trim() || p.name?.trim())
+              .map(p => ({ relation: p.relation.trim(), name: p.name?.trim() || null }))
+          : [],
+      transcript: voiceDraft.transcript || null,
+      photo: photoUrl ?? null
     });
     setIsSaving(false);
-    navigateTo('suggested_matches');
+    navigateTo('saved');
   };
 
   return (
@@ -121,6 +126,9 @@ export const VerifyDetailsScreen: React.FC = () => {
       }
     >
       <h1 className="screen-title">Check the details</h1>
+      {registrationType === 'seeking' && (
+        <p className="text-sm text-navy-muted -mt-2 mb-4">Name, age and clothing are about the missing person.</p>
+      )}
 
       {voiceDraft.notice && (
         <p role="alert" className="card mb-4 bg-pending-bg border-pending-border text-base font-medium text-navy">
@@ -141,13 +149,13 @@ export const VerifyDetailsScreen: React.FC = () => {
         <div>
           <FieldLabel label="Gender" unsure={unsure('gender')} />
           <div className="grid grid-cols-3 gap-2">
-            {(['Male', 'Female', 'Other'] as const).map(g => (
+            {(['male', 'female', 'other'] as const).map(g => (
               <button
                 key={g}
                 type="button"
                 aria-pressed={gender === g}
-                onClick={() => setGender(gender === g ? 'Unknown' : g)}
-                className={chipClass(gender === g, unsure('gender'))}
+                onClick={() => setGender(gender === g ? 'unknown' : g)}
+                className={`${chipClass(gender === g, unsure('gender'))} capitalize`}
               >
                 {g}
               </button>
@@ -176,7 +184,7 @@ export const VerifyDetailsScreen: React.FC = () => {
 
         <TextField
           id="relative-name"
-          label="Father's or spouse's name"
+          label={registrationType === 'found' ? "Father's or spouse's name" : 'Name of the person searching'}
           value={relativeName}
           onChange={setRelativeName}
           unsure={unsure('relative_name')}
@@ -184,7 +192,7 @@ export const VerifyDetailsScreen: React.FC = () => {
 
         <TextField
           id="relative-relation"
-          label="Their relation (father, husband…)"
+          label={registrationType === 'found' ? 'Their relation (father, husband…)' : 'Their relation to the missing person'}
           value={relativeRelation}
           onChange={setRelativeRelation}
           unsure={unsure('relative_relation')}
@@ -264,7 +272,7 @@ export const VerifyDetailsScreen: React.FC = () => {
           </div>
         )}
 
-        {(registrationType === 'missing' || hasMissingFamily) && (
+        {registrationType === 'found' && hasMissingFamily && (
           <div>
             <FieldLabel label="Looking for" unsure={unsure('looking_for')} />
             <div className="space-y-2">

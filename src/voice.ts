@@ -1,6 +1,6 @@
 import type { VoiceDraft } from './context/AppContext';
 import { emptyDraft } from './context/AppContext';
-import type { AgeBand, Gender, LookingFor, RegistrationType } from './types';
+import type { AgeBand, LookingFor, RecordType } from './types';
 
 // Served through the Vite proxy (see vite.config.ts) so it works on localhost and over HTTPS.
 const API = '/api';
@@ -23,16 +23,10 @@ interface ExtractResponse {
   unsure: string[];
 }
 
-const GENDERS: Record<ExtractResponse['fields']['gender'], Gender> = {
-  male: 'Male',
-  female: 'Female',
-  unknown: 'Unknown'
-};
-
-export async function extractFromVoice(audio: Blob, type: RegistrationType): Promise<VoiceDraft> {
+export async function extractFromVoice(audio: Blob, type: RecordType): Promise<VoiceDraft> {
   const form = new FormData();
   form.append('audio', audio, 'clip.webm');
-  form.append('record_type', type === 'found' ? 'found' : 'seeking');
+  form.append('record_type', type);
 
   try {
     const res = await fetch(`${API}/voice/extract`, { method: 'POST', body: form });
@@ -43,7 +37,7 @@ export async function extractFromVoice(audio: Blob, type: RegistrationType): Pro
       ...emptyDraft,
       transcript: data.transcript,
       name: f.name ?? '',
-      gender: GENDERS[f.gender] ?? 'Unknown',
+      gender: f.gender ?? 'unknown',
       ageBand: f.age_band,
       village: f.village ?? '',
       relativeName: f.relative_name ?? '',

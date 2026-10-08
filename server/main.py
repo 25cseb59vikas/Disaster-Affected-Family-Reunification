@@ -35,6 +35,7 @@ if os.name == "nt":
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
+from .sync import router as sync_router
 
 log = logging.getLogger("voice")
 logging.basicConfig(level=logging.INFO)
@@ -47,8 +48,9 @@ WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "auto")  # auto | cuda | cpu
 WHISPER_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "en")
 WHISPER_PROMPT = os.getenv(
     "WHISPER_PROMPT",
-    "Relief camp intake. Names like Lakshmi, Murugan, Selvi, Karthik. "
-    "Villages like Meppadi, Velankanni, Nagapattinam.")
+    # Village names only: personal names here would pull spelling variants towards one form.
+    "Relief camp intake. Villages: Meppadi, Velankanni, Nagapattinam, Kilvelur, Thirukkuvalai, "
+    "Nagore, Sirkazhi, Vedaranyam, Keezhaiyur, Thalainayar, Kodiyakkarai, Tharangambadi, Poompuhar, Karaikal.")
 MODELS_DIR = Path(__file__).parent / "models"
 # 127.0.0.1, not localhost: on Windows "localhost" tries IPv6 first and adds ~2 s per call.
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
@@ -143,6 +145,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+app.include_router(sync_router)
 
 
 def empty_fields() -> dict:

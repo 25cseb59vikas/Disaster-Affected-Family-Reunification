@@ -1,23 +1,25 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft } from 'lucide-react';
+import { siteName } from '../sites';
 
 interface TopBarProps {
   showBack?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
-  const { currentSite, volunteerName, offlineCount, syncOfflineQueue, goBack, canGoBack, navigateTo } = useApp();
-  const [isSyncing, setIsSyncing] = React.useState(false);
-  const siteName = currentSite.split(' – ')[0];
+  const { site, volunteerName, syncStatus, waitingCount, bytesSent, syncNow, goBack, canGoBack, navigateTo } = useApp();
+  const isSyncing = syncStatus === 'syncing';
+  const offline = syncStatus === 'offline';
+  const kb = bytesSent / 1024;
 
-  const handleSync = async () => {
-    setIsSyncing(true);
-    await syncOfflineQueue();
-    setIsSyncing(false);
-  };
-
-  const waiting = offlineCount > 0;
+  const statusText = isSyncing
+    ? 'Syncing'
+    : offline
+      ? waitingCount > 0 ? `Offline · ${waitingCount} waiting` : 'Offline'
+      : waitingCount > 0
+        ? `${waitingCount} waiting`
+        : bytesSent > 0 ? `Synced · ${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB sent` : 'Synced';
 
   return (
     <header className="flex-none">
@@ -33,7 +35,7 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
           </button>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold truncate">{siteName}</p>
+          <p className="text-base font-semibold truncate">{siteName(site)}</p>
           <p className="text-xs text-white/70 truncate">{volunteerName}</p>
         </div>
         <button
@@ -46,14 +48,17 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
       </div>
 
       <div className="h-status bg-surface border-b border-borderSlate pl-4 pr-2 flex items-center gap-2 text-xs whitespace-nowrap">
-        <span aria-hidden className={`w-2 h-2 rounded-full shrink-0 ${waiting ? 'bg-pending' : 'bg-verified'}`} />
+        <span
+          aria-hidden
+          className={`w-2 h-2 rounded-full shrink-0 ${offline ? 'bg-pending' : isSyncing ? 'bg-civilBlue' : 'bg-verified'}`}
+        />
         <span className="flex-1 min-w-0 truncate text-navy-muted" aria-live="polite">
-          {isSyncing ? 'Syncing…' : waiting ? `Offline · ${offlineCount} waiting` : 'Synced'}
+          {statusText}
         </span>
-        {waiting && !isSyncing && (
+        {!isSyncing && (offline || waitingCount > 0) && (
           <button
             type="button"
-            onClick={handleSync}
+            onClick={() => syncNow()}
             className="relative shrink-0 h-full px-2 text-xs font-medium text-civilBlue hover:underline before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']"
           >
             Sync now

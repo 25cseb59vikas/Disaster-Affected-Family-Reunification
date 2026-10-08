@@ -7,3 +7,4 @@ server/models/
 .env
 *.local
 server.log
+server/data/

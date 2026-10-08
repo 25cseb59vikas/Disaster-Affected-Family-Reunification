@@ -30,7 +30,7 @@ const ChoiceCard: React.FC<{ Icon: LucideIcon; title: string; helper: string; pa
 export const RegisterChooseTypeScreen: React.FC = () => {
   const { navigateTo, setRegistrationType } = useApp();
 
-  const handleSelectType = (type: 'found' | 'missing') => {
+  const handleSelectType = (type: 'found' | 'seeking') => {
     setRegistrationType(type);
     navigateTo('register_speak');
   };
@@ -51,7 +51,7 @@ export const RegisterChooseTypeScreen: React.FC = () => {
           title="Looking for someone"
           helper="A family member is searching"
           path="register-missing"
-          onClick={() => handleSelectType('missing')}
+          onClick={() => handleSelectType('seeking')}
         />
       </div>
     </Screen>

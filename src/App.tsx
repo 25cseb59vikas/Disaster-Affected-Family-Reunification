@@ -4,6 +4,7 @@ import { ChooseSiteScreen } from './screens/ChooseSiteScreen';
 import { RegisterChooseTypeScreen } from './screens/RegisterChooseTypeScreen';
 import { RegisterSpeakScreen } from './screens/RegisterSpeakScreen';
 import { VerifyDetailsScreen } from './screens/VerifyDetailsScreen';
+import { SavedScreen } from './screens/SavedScreen';
 import { SuggestedMatchesScreen } from './screens/SuggestedMatchesScreen';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
 import { FamilyStatusPortalScreen } from './screens/FamilyStatusPortalScreen';
@@ -24,6 +25,8 @@ export const AppContent: React.FC = () => {
         return <RegisterSpeakScreen />;
       case 'verify_details':
         return <VerifyDetailsScreen />;
+      case 'saved':
+        return <SavedScreen />;
       case 'suggested_matches':
         return <SuggestedMatchesScreen />;
       case 'match_review':
@@ -52,6 +55,7 @@ const DEBUG_SCREENS: Array<[ScreenId, string]> = [
   ['register_choose_type', 'Register'],
   ['register_speak', 'Speak'],
   ['verify_details', 'Verify'],
+  ['saved', 'Saved'],
   ['suggested_matches', 'Matches'],
   ['match_review', 'Review'],
   ['family_status_portal', 'Family'],

@@ -1,6 +1,21 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ScreenId, RegistrationType, MatchPair, PersonRecord, Gender, AgeBand, LookingFor } from '../types';
-import { db, seedInitialData } from '../db/database';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import Dexie from 'dexie';
+import { useLiveQuery } from 'dexie-react-hooks';
+import type {
+  AgeBand,
+  Gender,
+  LookingFor,
+  MatchEvent,
+  MatchEventKind,
+  MatchPair,
+  PersonRecord,
+  RecordType,
+  ScreenId,
+  SiteId
+} from '../types';
+import { getMeta, siteDb, type SiteDatabase } from '../db/database';
+import { recordCode, uuid } from '../sites';
+import { serverReachable, syncOnce } from '../sync';
 
 // Fields filled from the voice server (or empty when typing). `unsure` lists
 // the server's field names that the volunteer should check.
@@ -22,7 +37,7 @@ export interface VoiceDraft {
 export const emptyDraft: VoiceDraft = {
   transcript: '',
   name: '',
-  gender: 'Unknown',
+  gender: 'unknown',
   ageBand: null,
   village: '',
   relativeName: '',
@@ -34,101 +49,159 @@ export const emptyDraft: VoiceDraft = {
   notice: ''
 };
 
+export type NewPerson = Omit<PersonRecord, 'id' | 'code' | 'site' | 'type' | 'created_at' | 'registered_by'>;
+
+export type SyncStatus = 'offline' | 'syncing' | 'synced';
+
+const SYNC_EVERY_MS = 15000;
+const SITE_KEY = 'reunite.site';
+const VOLUNTEER_KEY = 'reunite.volunteer';
+
+const stored = (key: string) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const store = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode: the choice just isn't remembered */
+  }
+};
+
 interface AppContextType {
   currentScreen: ScreenId;
   navigateTo: (screen: ScreenId) => void;
   goBack: () => void;
   canGoBack: boolean;
-  currentSite: string;
-  setCurrentSite: (site: string) => void;
-  currentOrg: string;
-  setCurrentOrg: (org: string) => void;
+  site: SiteId;
+  db: SiteDatabase;
+  chooseSite: (site: SiteId, volunteer: string) => void;
   volunteerName: string;
-  setVolunteerName: (name: string) => void;
-  registrationType: RegistrationType;
-  setRegistrationType: (type: RegistrationType) => void;
-  isOnline: boolean;
-  setIsOnline: (online: boolean) => void;
-  offlineCount: number;
-  syncOfflineQueue: () => Promise<void>;
+  registrationType: RecordType;
+  setRegistrationType: (type: RecordType) => void;
+  syncStatus: SyncStatus;
+  waitingCount: number;
+  bytesSent: number;
+  syncNow: () => Promise<void>;
   voiceDraft: VoiceDraft;
   setVoiceDraft: React.Dispatch<React.SetStateAction<VoiceDraft>>;
-  resetVoiceDraft: () => void;
+  lastSavedId: string | null;
+  saveNewPerson: (person: NewPerson) => Promise<PersonRecord>;
+  addEvent: (kind: MatchEventKind, foundId: string, seekingId: string, reason?: string) => Promise<void>;
+  selectedSuggestionId: string | null;
+  setSelectedSuggestionId: (id: string | null) => void;
   selectedMatch: MatchPair | null;
   setSelectedMatch: (match: MatchPair | null) => void;
-  saveNewPerson: (person: Partial<PersonRecord>) => Promise<number>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [screenHistory, setScreenHistory] = useState<ScreenId[]>(['choose_site']);
-  const [currentSite, setCurrentSite] = useState<string>('Camp A – Govt. High School');
-  const [currentOrg, setCurrentOrg] = useState<string>('Organization A');
-  const [volunteerName, setVolunteerName] = useState<string>('Sundaram');
-  const [registrationType, setRegistrationType] = useState<RegistrationType>('found');
-  const [isOnline, setIsOnline] = useState<boolean>(false);
-  const [offlineCount, setOfflineCount] = useState<number>(12);
+  const initialSite = stored(SITE_KEY) as SiteId | null;
+  const [screenHistory, setScreenHistory] = useState<ScreenId[]>([initialSite ? 'register_choose_type' : 'choose_site']);
+  const [site, setSite] = useState<SiteId>(initialSite ?? 'camp-a');
+  const [volunteerName, setVolunteerName] = useState<string>(stored(VOLUNTEER_KEY) ?? '');
+  const [registrationType, setRegistrationType] = useState<RecordType>('found');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
   const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(emptyDraft);
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<MatchPair | null>(null);
 
+  const db = siteDb(site);
+  const waitingCount = useLiveQuery(() => db.outbox.count(), [db], 0);
+  const bytesSent = useLiveQuery(() => getMeta(db, 'bytes_sent', 0), [db], 0);
+
+  // Remove the database from the old prototype (fake seed data).
   useEffect(() => {
-    seedInitialData();
+    Dexie.delete('ReuniteReliefDB').catch(() => {});
   }, []);
+
+  const syncing = useRef(false);
+  const syncNow = useCallback(async () => {
+    if (syncing.current) return;
+    syncing.current = true;
+    try {
+      if (!(await serverReachable())) {
+        setSyncStatus('offline');
+        return;
+      }
+      setSyncStatus('syncing');
+      await syncOnce(db, site);
+      setSyncStatus('synced');
+    } catch (err) {
+      console.warn('Sync failed', err);
+      setSyncStatus('offline');
+    } finally {
+      syncing.current = false;
+    }
+  }, [db, site]);
+
+  useEffect(() => {
+    syncNow();
+    const timer = window.setInterval(syncNow, SYNC_EVERY_MS);
+    return () => clearInterval(timer);
+  }, [syncNow]);
 
   const currentScreen = screenHistory[screenHistory.length - 1];
 
-  const navigateTo = (screen: ScreenId) => {
-    setScreenHistory(prev => [...prev, screen]);
-    window.scrollTo(0, 0);
-  };
+  const navigateTo = (screen: ScreenId) => setScreenHistory(prev => [...prev, screen]);
 
   const goBack = () => {
-    if (screenHistory.length > 1) {
-      setScreenHistory(prev => prev.slice(0, prev.length - 1));
-      window.scrollTo(0, 0);
-    }
+    if (screenHistory.length > 1) setScreenHistory(prev => prev.slice(0, prev.length - 1));
   };
 
-  const canGoBack = screenHistory.length > 1;
-
-  const resetVoiceDraft = () => setVoiceDraft(emptyDraft);
-
-  const syncOfflineQueue = async () => {
-    // Simulate syncing Dexie offline queue with central disaster registry
-    setIsOnline(true);
-    await new Promise(r => setTimeout(r, 600));
-    setOfflineCount(0);
-    // Mark records as synced in Dexie
-    await db.records.where('synced').equals(0).modify({ synced: true });
+  const chooseSite = (next: SiteId, volunteer: string) => {
+    // The status shown so far belonged to the previous site.
+    if (next !== site) setSyncStatus('syncing');
+    setSite(next);
+    setVolunteerName(volunteer);
+    store(SITE_KEY, next);
+    store(VOLUNTEER_KEY, volunteer);
+    setLastSavedId(null);
+    setSelectedSuggestionId(null);
+    setScreenHistory(['register_choose_type']);
   };
 
-  const saveNewPerson = async (person: Partial<PersonRecord>) => {
-    const newRecord: PersonRecord = {
-      syncId: `rec-${Date.now()}`,
+  const saveNewPerson = async (person: NewPerson) => {
+    const record: PersonRecord = {
+      ...person,
+      id: uuid(),
+      code: recordCode(site),
+      site,
       type: registrationType,
-      name: person.name || 'Unnamed Person',
-      gender: person.gender || 'Unknown',
-      ageBand: person.ageBand ?? null,
-      village: person.village || 'Unknown',
-      relativeName: person.relativeName || '',
-      relativeRelation: person.relativeRelation,
-      foundWhere: person.foundWhere,
-      lookingFor: person.lookingFor,
-      clothingMarks: person.clothingMarks || '',
-      hasMissingFamily: person.hasMissingFamily ?? false,
-      photoUrl: person.photoUrl,
-      status: 'Possible match',
-      site: currentSite,
-      registeredBy: volunteerName,
-      transcript: person.transcript,
-      createdAt: Date.now(),
-      synced: false
+      created_at: new Date().toISOString(),
+      registered_by: volunteerName
     };
+    await db.transaction('rw', db.records, db.outbox, async () => {
+      await db.records.add(record);
+      await db.outbox.add({ id: record.id, kind: 'record', payload: record });
+    });
+    setLastSavedId(record.id);
+    syncNow();
+    return record;
+  };
 
-    const id = await db.records.add(newRecord);
-    setOfflineCount(prev => prev + 1);
-    return id;
+  const addEvent = async (kind: MatchEventKind, foundId: string, seekingId: string, reason?: string) => {
+    const event: MatchEvent = {
+      id: uuid(),
+      kind,
+      found_id: foundId,
+      seeking_id: seekingId,
+      site,
+      officer: volunteerName,
+      reason: reason?.trim() || null,
+      created_at: new Date().toISOString()
+    };
+    await db.transaction('rw', db.events, db.outbox, async () => {
+      await db.events.add(event);
+      await db.outbox.add({ id: event.id, kind: 'event', payload: event });
+    });
+    syncNow();
   };
 
   return (
@@ -137,25 +210,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentScreen,
         navigateTo,
         goBack,
-        canGoBack,
-        currentSite,
-        setCurrentSite,
-        currentOrg,
-        setCurrentOrg,
+        canGoBack: screenHistory.length > 1,
+        site,
+        db,
+        chooseSite,
         volunteerName,
-        setVolunteerName,
         registrationType,
         setRegistrationType,
-        isOnline,
-        setIsOnline,
-        offlineCount,
-        syncOfflineQueue,
+        syncStatus,
+        waitingCount,
+        bytesSent,
+        syncNow,
         voiceDraft,
         setVoiceDraft,
-        resetVoiceDraft,
+        lastSavedId,
+        saveNewPerson,
+        addEvent,
+        selectedSuggestionId,
+        setSelectedSuggestionId,
         selectedMatch,
-        setSelectedMatch,
-        saveNewPerson
+        setSelectedMatch
       }}
     >
       {children}
