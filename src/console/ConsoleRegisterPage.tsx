@@ -77,7 +77,7 @@ export const ConsoleRegisterPage: React.FC = () => {
         <h1 className="screen-title">Check the details</h1>
         {step.type === 'seeking' && <p className="text-sm text-navy-muted -mt-2 mb-4">Name, age and clothing are about the missing person.</p>}
         <DetailsForm formId="console-details" type={step.type} draft={step.draft} onSave={p => save(step.type, p)} />
-        <div className="mt-6 flex justify-end">
+        <div className="sticky bottom-0 -mx-4 px-4 py-3 mt-6 bg-canvas border-t border-borderSlate lg:static lg:mx-0 lg:px-0 lg:py-0 lg:border-0 flex justify-end">
           <button type="submit" form="console-details" disabled={saving} className="btn-primary w-auto min-w-[200px] px-8">
             {saving ? 'Saving…' : 'Save'}
           </button>

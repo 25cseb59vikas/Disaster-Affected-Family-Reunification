@@ -11,6 +11,8 @@ interface ScreenProps {
   nav?: NavTab | 'notifications';
   /** Pinned under the content, above the nav (e.g. a Save button). Right-aligned on desktop. */
   footer?: React.ReactNode;
+  /** Sidebar item to highlight on desktop when it differs from `nav` (e.g. Notifications). */
+  sidebar?: NavTab | 'notifications';
   /** Content width from tablet size up. Desktop screens with lists or two columns use 'wide'. */
   width?: 'narrow' | 'medium' | 'wide';
 }
@@ -23,9 +25,9 @@ const WIDTH = {
 
 // Phones (below 768px) and tablets: a 100dvh column with the top bar and bottom navigation; only the
 // middle scrolls. Desktop (1024px and up): navy sidebar on the left, status bar on top of the content.
-export const Screen: React.FC<ScreenProps> = ({ children, header = true, showBack = false, nav, footer, width = 'medium' }) => (
+export const Screen: React.FC<ScreenProps> = ({ children, header = true, showBack = false, nav, sidebar, footer, width = 'medium' }) => (
   <div className="h-dvh w-full max-w-app md:max-w-none mx-auto flex bg-canvas">
-    {header && <AppSidebar activeTab={nav} />}
+    {header && <AppSidebar activeTab={sidebar ?? nav} />}
     <div className="flex-1 min-w-0 flex flex-col">
       {header && <TopBar showBack={showBack} />}
       {header && <DesktopStatusBar showBack={showBack} />}

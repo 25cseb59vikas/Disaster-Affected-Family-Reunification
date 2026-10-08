@@ -119,7 +119,7 @@ export const PriorityCasesScreen: React.FC = () => {
         <h1 className="screen-title">Priority</h1>
         {countsCard}
         <DesktopList
-          empty={data && cases.length === 0 ? 'Nothing urgent right now.' : null}
+          empty={!data ? 'Loading…' : cases.length === 0 ? 'Nothing urgent right now.' : null}
           head={['Case', 'Why it is here']}
           cols="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]"
           rows={cases.map(c => ({
@@ -188,6 +188,7 @@ export const PriorityCasesScreen: React.FC = () => {
             </div>
           );
         })}
+        {!data && <p className="card text-center text-base text-navy-muted md:col-span-full" role="status">Loading…</p>}
         {data && data.cases.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-full">Nothing urgent right now.</p>}
       </div>
     </Screen>

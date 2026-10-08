@@ -16,7 +16,7 @@ export const NotificationsScreen: React.FC = () => {
   const items = useLiveQuery(() => db.notifications.orderBy('created_at').reverse().limit(50).toArray(), [db], []);
 
   return (
-    <Screen showBack nav="matches">
+    <Screen showBack nav="matches" sidebar="notifications">
       <h1 className="screen-title">Notifications</h1>
       <div className="card-stack">
         {items.map(n => (

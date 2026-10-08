@@ -53,7 +53,7 @@ export const SuggestedMatchesScreen: React.FC = () => {
       <Screen nav="matches" width="wide">
         <h1 className="screen-title">Matches</h1>
         <DesktopList
-          empty={data && items.length === 0 ? 'No matches yet' : null}
+          empty={!data ? 'Loading…' : items.length === 0 ? 'No matches yet' : null}
           head={['Score', 'Found person / being searched for', 'Status']}
           cols="grid-cols-[88px_minmax(0,1fr)_auto]"
           rows={items.map(({ s, state }) => {
@@ -130,6 +130,7 @@ export const SuggestedMatchesScreen: React.FC = () => {
           );
         })}
 
+        {!data && <p className="card text-center text-base text-navy-muted md:col-span-full" role="status">Loading…</p>}
         {data && items.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-full">No matches yet</p>}
       </div>
     </Screen>

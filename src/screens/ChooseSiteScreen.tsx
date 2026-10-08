@@ -23,7 +23,7 @@ export const ChooseSiteScreen: React.FC = () => {
   return (
     <Screen
       header={false}
-      width="narrow"
+      width="medium"
       footer={
         <button type="button" onClick={handleContinue} className="btn-primary">
           Continue

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Mic, Phone, PhoneOff } from 'lucide-react';
-import { Screen } from '../components/Screen';
+import { Check, HelpCircle, Keyboard, Loader2, Mic, Phone, PhoneOff, Volume2 } from 'lucide-react';
 import { siteDb } from '../db/database';
 import { PHONE_LINE, recordCode, siteName, uuid } from '../sites';
 import { applyServerEpoch, serverHealth, syncOnce } from '../sync';
@@ -150,6 +149,12 @@ export const PhoneLinePage: React.FC = () => {
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [meter, setMeter] = useState({ level: 0, threshold: null as number | null, noise: null as number | null, silenceLeft: null as number | null });
   const [events, setEvents] = useState<string[]>([]);
+  const [callStart, setCallStart] = useState<number | null>(null);
+  const [callEnd, setCallEnd] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const [savedCode, setSavedCode] = useState<string | null>(null);
+  const [sideTab, setSideTab] = useState<'details' | 'sms'>('details');
+  const questionRef = useRef<HTMLDivElement>(null);
 
   // The machine itself lives in refs so async steps always see the current values.
   const stateRef = useRef<CallState>('idle');
@@ -518,6 +523,8 @@ export const PhoneLinePage: React.FC = () => {
     sessionStorage.setItem('reunite.phoneRecord', record.id);
     setRecordId(record.id);
     syncOnce(db, PHONE_LINE.id).catch(() => {}); // stays in the outbox if the link is down
+    setSavedCode(record.code);
+    setCallEnd(Date.now());
     transition('ended');
     const goodbye = `Thank you. We will send you a message when we have news. Your reference is ${spellCode(record.code)}.`;
     setMessage(`We will send you a message when we have news. Your reference is ${record.code}.`);
@@ -538,6 +545,9 @@ export const PhoneLinePage: React.FC = () => {
     sessionStorage.removeItem('reunite.phoneRecord');
     t0Ref.current = performance.now();
     setEvents([]);
+    setCallStart(Date.now());
+    setCallEnd(null);
+    setSavedCode(null);
     const e = transition('intro');
     await speak(
       `Hello. This is the family search line. I will ask seven short questions. ${
@@ -548,9 +558,16 @@ export const PhoneLinePage: React.FC = () => {
   };
 
   const hangUp = () => {
+    setCallStart(null);
     transition('idle');
     if (canSpeak) speechSynthesis.cancel();
   };
+
+  useEffect(() => {
+    if (!callStart || callEnd) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [callStart, callEnd]);
 
   useEffect(() => {
     if (focusInputRef.current && inputRef.current && !inputRef.current.disabled) {
@@ -613,92 +630,211 @@ export const PhoneLinePage: React.FC = () => {
   const micOpen = MIC_STATES.includes(state);
   const submitting = state === 'submitting' || state === 'confirm_submitting';
   const canEdit = inQuestion || state === 'confirm';
+  const inCall = state !== 'idle' && state !== 'ended' && state !== 'error';
+  const answered = QUESTIONS.map((q, i) => ({ q, i, a: answers[i] })).filter(x => x.a !== undefined);
 
-  const statusLine: Partial<Record<CallState, string>> = {
-    intro: 'Speaking…',
-    speaking: 'Speaking…',
-    waiting: 'Listening… start speaking',
-    listening: 'Listening…',
-    typing: 'Typing – press Enter or tap Next when you are done',
-    submitting: 'Checking your answer…',
-    confirm_speaking: 'Speaking…',
-    confirm_waiting: 'Listening for yes or no…',
-    confirm_listening: 'Listening…',
-    confirm_submitting: 'Checking…'
+  // One label per state, announced to screen readers.
+  const indicator: { label: string; tone: string; Icon: typeof Mic } =
+    state === 'intro' || state === 'speaking' || state === 'confirm_speaking'
+      ? { label: 'Speaking…', tone: 'bg-header', Icon: Volume2 }
+      : state === 'waiting' || state === 'confirm_waiting'
+        ? { label: 'Waiting for you', tone: 'bg-terracotta', Icon: Mic }
+        : state === 'listening' || state === 'confirm_listening'
+          ? { label: 'Listening…', tone: 'bg-urgent', Icon: Mic }
+          : state === 'typing'
+            ? { label: 'Typing…', tone: 'bg-civilBlue', Icon: Keyboard }
+            : submitting || state === 'understanding' || state === 'saving'
+              ? { label: 'One moment…', tone: 'bg-pending', Icon: Loader2 }
+              : state === 'confirm'
+                ? { label: 'Is that correct?', tone: 'bg-civilBlue', Icon: HelpCircle }
+                : state === 'ended'
+                  ? { label: 'Call ended', tone: 'bg-verified', Icon: Check }
+                  : { label: 'Ready', tone: 'bg-header', Icon: Phone };
+  const ring = micOpen ? Math.min(28, (meter.level / Math.max(0.01, meter.threshold ?? 0.03)) * 7) : 0;
+
+  /** Done: the typed answer if there is one, otherwise the spoken one. */
+  const done = () => {
+    if (typedRef.current.trim() || !micOpen) submitTyped(); // empty and no microphone: "Please type an answer or tap Skip."
+    else submitVoice(inConfirm ? 'confirm' : 'question');
   };
 
+  const elapsed = callStart ? Math.max(0, Math.floor(((callEnd ?? now) - callStart) / 1000)) : 0;
+  const timer = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
+  const textBtn =
+    'min-h-[44px] px-3 rounded-button text-base font-medium text-civilBlue hover:bg-civilBlue-soft active:bg-civilBlue-soft disabled:opacity-40 disabled:hover:bg-transparent';
+
+  const smsBubbles =
+    sms && sms.length ? (
+      <ul className="space-y-2">
+        {sms.map(m => (
+          <li key={m} className="max-w-[85%] rounded-card rounded-bl-badge bg-surface border border-borderSlate px-3 py-2 shadow-subtle">
+            <span className="block text-xs font-medium text-navy-muted">Reunite</span>
+            <span className="block text-base text-navy">{m.replace(/^Reunite \(demo\): /, '')}</span>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-sm text-navy-muted">Messages the caller would receive appear here after the call.</p>
+    );
+
+  const extracted: Array<[string, string | null | undefined]> = fields
+    ? [
+        ['Name', fields.name],
+        ['Gender', fields.gender === 'unknown' ? null : fields.gender],
+        ['Age', fields.age_band],
+        ['Village', fields.village],
+        ['Searching', fields.relative_name ? `${fields.relative_name}${fields.relative_relation ? ` (${fields.relative_relation})` : ''}` : null],
+        ['Clothing, marks', fields.clothing_or_marks],
+        ['Last seen', fields.found_where]
+      ]
+    : [];
+
   return (
-    <Screen header={false} width="narrow">
-      <p className="-mx-4 -mt-4 mb-4 px-4 py-2 bg-pending-bg border-b border-pending-border text-sm font-semibold text-navy text-center">
-        Simulated call – demo. No real phone call or SMS is made.
-      </p>
-      <h1 className="screen-title">Family search line</h1>
+    <div className="min-h-dvh bg-canvas">
+      {/* Desktop: the app frame around the call. */}
+      <header className="hidden lg:block bg-header text-white">
+        <div className="mx-auto max-w-[1200px] px-8 h-14 flex items-center gap-3">
+          <a href="/" className="text-lg font-semibold rounded-badge hover:underline">
+            Reunite
+          </a>
+          <span className="text-white/70">Help line</span>
+          <span className="badge bg-pending-bg text-pending border-pending-border">Simulated call – demo</span>
+        </div>
+      </header>
 
-      <label className="flex items-start gap-3 mb-3 min-h-[44px] cursor-pointer">
-        <input
-          type="checkbox"
-          checked={autoAdvance}
-          onChange={ev => setAutoAdvance(ev.target.checked)}
-          className="mt-1 w-5 h-5 shrink-0 accent-terracotta"
-        />
-        <span className="text-sm text-navy">Move on automatically after 2 seconds of silence (otherwise tap "Done" after each answer)</span>
-      </label>
-      {notice && <p role="alert" className="card mb-3 bg-pending-bg border-pending-border text-sm font-medium text-navy">{notice}</p>}
-
-      <section className="card mb-3 text-center" aria-label="Call">
-        {state === 'idle' || state === 'ended' || state === 'error' ? (
-          <>
-            {message && <p className="text-lg font-semibold text-navy mb-3">{message}</p>}
-            <button type="button" onClick={startCall} className="btn-primary lg:mx-auto">
-              <Phone className="w-5 h-5" strokeWidth={1.75} />
-              {state === 'idle' ? 'Call' : 'Call again'}
-            </button>
-            {!canSpeak && <p className="text-sm text-navy-muted mt-2">Spoken questions are not available in this browser; read them on screen.</p>}
-          </>
-        ) : (
-          <>
-            {inQuestion && (
-              <>
-                <p className="text-sm text-navy-muted">
-                  Question {qIndex + 1} of {QUESTIONS.length}
-                </p>
-                <p className="text-xl font-semibold text-navy my-2">{QUESTIONS[qIndex].text}</p>
-              </>
+      <div className="lg:max-w-[1200px] lg:mx-auto lg:px-8 lg:py-8 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-8 lg:items-start">
+        {/* The call: the whole screen on phones, a phone-shaped card on desktop. */}
+        <section
+          aria-label="Call"
+          className="h-dvh flex flex-col bg-canvas lg:h-[min(780px,calc(100dvh-8rem))] lg:rounded-[32px] lg:border-[6px] lg:border-header lg:overflow-hidden lg:shadow-subtle lg:sticky lg:top-8"
+        >
+          <div className="flex-none bg-header text-white px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-semibold truncate">Reunite help line</p>
+              <span className="inline-block mt-0.5 rounded-badge bg-white/15 px-1.5 text-xs text-white/90">Simulated call – demo</span>
+            </div>
+            {inCall || state === 'ended' ? (
+              <span className="text-base font-medium tabular-nums text-white/90" aria-label={`Call time ${timer}`}>
+                {timer}
+              </span>
+            ) : (
+              <a href="/" className="min-h-[44px] px-2 inline-flex items-center text-sm text-white/90 hover:text-white rounded-button lg:hidden">
+                Back to Reunite
+              </a>
             )}
-            {(inConfirm || state === 'saving') && <p className="text-lg font-semibold text-navy mb-2">{message}</p>}
-            {state === 'understanding' && <p className="text-lg font-semibold text-navy">Checking your answers…</p>}
-            {state === 'saving' && <p className="text-base text-navy-muted">Registering…</p>}
+          </div>
 
-            {statusLine[state] && (
-              <p
-                className={`flex items-center justify-center gap-2 text-base ${micOpen ? 'text-urgent font-medium' : 'text-navy-muted'}`}
-                aria-live="polite"
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+            {inCall && answered.length > 0 && (
+              <ol aria-label="Answers so far" className="mb-4 rounded-card bg-surface border border-borderSlate divide-y divide-borderSlate max-h-40 overflow-y-auto">
+                {answered.map(({ q, i, a }) => (
+                  <li key={q.label} className="flex items-center gap-2 pl-3 pr-1 min-w-0">
+                    <span className="flex-1 min-w-0 truncate text-sm text-navy">
+                      <span className="text-navy-muted">{q.label}:</span> {a || '(skipped)'}
+                    </span>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => askQuestion(i)}
+                        disabled={submitting}
+                        className="shrink-0 min-h-[44px] px-3 text-sm font-medium text-civilBlue rounded-button hover:bg-civilBlue-soft disabled:opacity-40"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            <div className="flex flex-col items-center text-center">
+              <span
+                className={`mt-2 w-32 h-32 rounded-full flex items-center justify-center text-white transition-[box-shadow] duration-75 ${indicator.tone}`}
+                style={{ boxShadow: ring ? `0 0 0 ${ring}px rgba(194, 84, 15, 0.22)` : undefined }}
+                aria-hidden
               >
-                {micOpen && <Mic className="w-5 h-5" strokeWidth={1.75} />}
-                {statusLine[state]}
+                <indicator.Icon className={`w-12 h-12 ${indicator.Icon === Loader2 ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+              </span>
+              <p className="mt-4 text-lg font-semibold text-navy" aria-live="polite">
+                {indicator.label}
               </p>
-            )}
-            {micOpen && (
-              <div className="mt-2 space-y-2">
-                <LevelMeter level={meter.level} threshold={meter.threshold} />
-                {autoAdvance && meter.silenceLeft !== null && <CountdownRing leftMs={meter.silenceLeft} />}
-              </div>
-            )}
+              {micOpen && autoAdvance && meter.silenceLeft !== null && (
+                <div className="mt-2">
+                  <CountdownRing leftMs={meter.silenceLeft} />
+                </div>
+              )}
 
-            {micOpen && (
-              <button
-                type="button"
-                onClick={() => submitVoice(inConfirm ? 'confirm' : 'question')}
-                className="btn-primary h-14 text-lg mt-3 lg:mx-auto lg:min-w-[200px]"
-              >
-                Done
+              {state === 'idle' && (
+                <>
+                  <h1 className="mt-6 text-xl font-semibold text-navy">Search for a family member by phone</h1>
+                  <p className="mt-1 text-base text-navy-muted">Answer seven short questions by voice or by typing. No real call is made.</p>
+                  <label className="mt-4 flex items-start gap-3 text-left min-h-[44px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoAdvance}
+                      onChange={ev => setAutoAdvance(ev.target.checked)}
+                      className="mt-1 w-5 h-5 shrink-0 accent-terracotta"
+                    />
+                    <span className="text-sm text-navy">Move on automatically after 2 seconds of silence (otherwise tap "Done" after each answer)</span>
+                  </label>
+                </>
+              )}
+
+              {(state === 'ended' || state === 'error') && (
+                <div className="mt-6">
+                  {state === 'ended' && savedCode ? (
+                    <>
+                      <p className="text-sm text-navy-muted">Your reference code</p>
+                      <p className="text-score font-semibold tracking-wider text-navy">{savedCode}</p>
+                      <p className="mt-2 text-base text-navy">We will send you a message when we have news.</p>
+                    </>
+                  ) : (
+                    <p className="text-base text-navy">{message}</p>
+                  )}
+                </div>
+              )}
+
+              {inQuestion && (
+                <div ref={questionRef} className="mt-4 w-full scroll-mt-4">
+                  <p className="text-xl font-semibold text-navy" aria-live="polite">
+                    {QUESTIONS[qIndex].text}
+                  </p>
+                  <p className="mt-2 text-sm text-navy-muted">
+                    Question {qIndex + 1} of {QUESTIONS.length}
+                  </p>
+                  <span className="mt-1.5 block h-1 rounded-full bg-pressed overflow-hidden" aria-hidden>
+                    <span className="block h-full bg-terracotta" style={{ width: `${((qIndex + 1) / QUESTIONS.length) * 100}%` }} />
+                  </span>
+                </div>
+              )}
+              {(inConfirm || state === 'saving') && (
+                <div ref={questionRef} className="mt-4 w-full">
+                  <p className="text-xl font-semibold text-navy" aria-live="polite">
+                    {message}
+                  </p>
+                </div>
+              )}
+              {state === 'understanding' && <p className="mt-4 text-base text-navy-muted">Checking your answers…</p>}
+              {notice && (
+                <p role="alert" className="mt-4 w-full rounded-card bg-pending-bg border border-pending-border px-3 py-2 text-sm text-navy text-left">
+                  {notice}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Answer area: stays above the on-screen keyboard (the page resizes with it). */}
+          <div className="flex-none px-4 pt-3 pb-3 bg-canvas border-t border-borderSlate">
+            {(state === 'idle' || state === 'ended' || state === 'error') && (
+              <button type="button" onClick={startCall} className="btn-primary h-14 text-lg lg:w-full">
+                <Phone className="w-5 h-5" strokeWidth={1.75} />
+                {state === 'idle' ? 'Start call' : 'Start another call'}
               </button>
             )}
-
             {inQuestion && (
-              <div className="mt-3 text-left">
-                <label htmlFor="typed-answer" className="field-label">
-                  Or type the answer
+              <>
+                <label htmlFor="typed-answer" className="sr-only">
+                  Type the answer
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -706,114 +842,169 @@ export const PhoneLinePage: React.FC = () => {
                     ref={inputRef}
                     value={typed}
                     disabled={submitting}
+                    placeholder="Or type the answer"
                     onChange={ev => onType(ev.target.value)}
+                    onFocus={() => setTimeout(() => questionRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
                     onKeyDown={ev => {
                       if (ev.key === 'Enter' && !ev.nativeEvent.isComposing) {
                         ev.preventDefault();
                         submitTyped();
                       }
                     }}
-                    className="input flex-1"
+                    className="input flex-1 min-w-0"
                     autoComplete="off"
+                    enterKeyHint="send"
                   />
                   <button
                     type="button"
-                    onClick={submitTyped}
-                    disabled={submitting}
-                    className="h-12 px-4 rounded-button border border-borderSlate bg-surface text-base font-semibold text-navy hover:border-navy disabled:opacity-50"
+                    onClick={done}
+                    disabled={submitting || (state === 'speaking' && !typed.trim())}
+                    className="btn-primary w-auto min-w-[96px] px-5 lg:min-w-[96px] lg:px-5"
                   >
-                    Next
+                    Done
                   </button>
                 </div>
-                {hint && <p className="text-sm text-urgent mt-1.5">{hint}</p>}
-                <div className="flex flex-wrap justify-center gap-x-2 mt-2">
-                  <button type="button" onClick={() => askQuestion(Math.max(0, qIndex - 1))} disabled={submitting || qIndex === 0} className="btn-text disabled:opacity-40">
-                    Back
-                  </button>
-                  <button type="button" onClick={() => askQuestion(qIndex)} disabled={submitting} className="btn-text disabled:opacity-40">
+                {hint && (
+                  <p className="text-sm text-urgent mt-1.5" role="alert">
+                    {hint}
+                  </p>
+                )}
+                <div className="flex flex-wrap justify-center gap-x-1 mt-1">
+                  <button type="button" onClick={() => askQuestion(qIndex)} disabled={submitting} className={textBtn}>
                     Repeat question
                   </button>
-                  <button type="button" onClick={skip} disabled={submitting} className="btn-text disabled:opacity-40">
+                  <button type="button" onClick={() => askQuestion(Math.max(0, qIndex - 1))} disabled={submitting || qIndex === 0} className={textBtn}>
+                    Back
+                  </button>
+                  <button type="button" onClick={skip} disabled={submitting} className={textBtn}>
                     Skip
                   </button>
                 </div>
-              </div>
+              </>
             )}
-
             {inConfirm && (
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <button type="button" onClick={confirm} disabled={state === 'confirm_submitting'} className="btn-primary">
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={confirm} disabled={state === 'confirm_submitting'} className="btn-primary lg:w-full">
                   Yes
                 </button>
-                <button type="button" onClick={answerNo} disabled={state === 'confirm_submitting'} className="chip">
+                <button
+                  type="button"
+                  onClick={answerNo}
+                  disabled={state === 'confirm_submitting'}
+                  className="h-12 rounded-button border border-borderSlate bg-surface text-base font-semibold text-navy hover:border-navy active:bg-pressed"
+                >
                   No
                 </button>
               </div>
             )}
+            {(state === 'understanding' || state === 'saving' || state === 'intro') && (
+              <p className="text-center text-sm text-navy-muted min-h-[44px] flex items-center justify-center">Please wait…</p>
+            )}
+          </div>
 
-            <button type="button" onClick={hangUp} className="btn-text text-urgent mt-2 gap-1">
-              <PhoneOff className="w-5 h-5" strokeWidth={1.75} />
-              End call
-            </button>
-          </>
-        )}
-      </section>
-
-      {state !== 'idle' && (
-        <section className="card mb-3" aria-label="Your answers">
-          <h2 className="text-sm font-medium text-navy-muted mb-1">Your answers</h2>
-          <ol className="space-y-1.5">
-            {QUESTIONS.map((q, i) => (
-              <li key={q.label} className={`min-w-0 flex items-start gap-2 ${inQuestion && i === qIndex ? 'font-medium' : ''}`}>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-xs text-navy-muted">{q.label}</span>
-                  <span className={`block text-sm break-words ${answers[i] === undefined ? 'text-navy-muted' : 'text-navy'}`}>
-                    {answers[i] === undefined ? (inQuestion && i === qIndex ? 'Answering now…' : '–') : answers[i] || '(skipped)'}
-                  </span>
-                </span>
-                {answers[i] !== undefined && canEdit && (
-                  <button type="button" onClick={() => askQuestion(i)} disabled={submitting} className="text-sm text-civilBlue hover:underline min-h-[32px] shrink-0">
-                    Edit
-                  </button>
-                )}
-              </li>
-            ))}
-          </ol>
+          {inCall && (
+            <div className="flex-none px-4 pt-1 pb-[max(12px,env(safe-area-inset-bottom))] bg-canvas">
+              <button
+                type="button"
+                onClick={hangUp}
+                className="w-full h-12 rounded-button bg-urgent text-white text-base font-semibold inline-flex items-center justify-center gap-2 hover:bg-urgent/90 active:bg-urgent/80"
+              >
+                <PhoneOff className="w-5 h-5" strokeWidth={1.75} />
+                End call
+              </button>
+            </div>
+          )}
         </section>
-      )}
 
-      {debugOn && (
-        <section className="card mb-3 font-mono text-xs text-navy" aria-label="Debug">
-          <p>
-            state: <b data-testid="debug-state">{state}</b> · question {qIndex + 1} · mode {autoAdvance ? 'auto' : 'done'}
-            {typedOnlyRef.current ? ' · typed only' : ''}
-          </p>
-          <p>
-            level {meter.level.toFixed(3)} · noise {meter.noise?.toFixed(3) ?? '–'} · threshold {meter.threshold?.toFixed(3) ?? '–'} · silence timer{' '}
-            {meter.silenceLeft !== null ? `${Math.max(0, meter.silenceLeft)} ms left` : 'off'}
-          </p>
-          <ol className="mt-1 text-navy-muted">
-            {events.map((ev, i) => (
-              <li key={i}>{ev}</li>
-            ))}
-          </ol>
-        </section>
-      )}
+        <div className="min-w-0 px-4 py-4 lg:p-0 space-y-3">
+          {/* Phones: the messages below the call, collapsed until it ends. */}
+          <details className="lg:hidden card" open={state === 'ended'}>
+            <summary className="min-h-[44px] flex items-center cursor-pointer text-base font-semibold text-navy">SMS preview (demo – not sent)</summary>
+            <div className="mt-2">{smsBubbles}</div>
+          </details>
 
-      <section className="card">
-        <h2 className="text-sm font-medium text-navy-muted">SMS preview (demo – not sent)</h2>
-        {sms && sms.length ? (
-          <ul className="mt-2 space-y-2">
-            {sms.map(m => (
-              <li key={m} className="rounded-card bg-pressed px-3 py-2 text-base text-navy">
-                {m}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-navy-muted mt-1">Messages the caller would receive appear here after registering.</p>
-        )}
-      </section>
-    </Screen>
+          {/* Desktop: what the call has captured so far, and the messages. */}
+          <section className="hidden lg:block card p-0" aria-label="Call details">
+            <div role="tablist" aria-label="Call details" className="flex border-b border-borderSlate px-2">
+              {(
+                [
+                  ['details', 'Captured details'],
+                  ['sms', 'SMS preview']
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={sideTab === id}
+                  onClick={() => setSideTab(id)}
+                  className={`min-h-[48px] px-4 text-base font-medium border-b-2 -mb-px ${
+                    sideTab === id ? 'border-terracotta text-navy' : 'border-transparent text-navy-muted hover:text-navy'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="p-5" role="tabpanel">
+              {sideTab === 'details' ? (
+                <>
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    {QUESTIONS.map((q, i) => (
+                      <div key={q.label} className={`min-w-0 rounded-button p-2 -m-2 ${inQuestion && i === qIndex ? 'bg-terracotta-soft' : ''}`}>
+                        <dt className="text-xs text-navy-muted flex items-center gap-2">
+                          {q.label}
+                          {answers[i] !== undefined && canEdit && (
+                            <button type="button" onClick={() => askQuestion(i)} disabled={submitting} className="text-xs font-medium text-civilBlue hover:underline">
+                              Edit
+                            </button>
+                          )}
+                        </dt>
+                        <dd className={`text-base break-words ${answers[i] === undefined ? 'text-navy-muted' : 'text-navy'}`}>
+                          {answers[i] === undefined ? (inQuestion && i === qIndex ? 'Answering now…' : '–') : answers[i] || '(skipped)'}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {extracted.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-borderSlate">
+                      <h2 className="text-sm font-medium text-navy-muted mb-2">What the line understood</h2>
+                      <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+                        {extracted.map(([label, value]) => (
+                          <div key={label} className="min-w-0">
+                            <dt className="text-xs text-navy-muted">{label}</dt>
+                            <dd className={`text-base break-words first-letter:uppercase ${value ? 'text-navy' : 'text-navy-muted italic'}`}>{value || 'Not heard'}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </>
+              ) : (
+                smsBubbles
+              )}
+            </div>
+          </section>
+
+          {debugOn && (
+            <section className="card font-mono text-xs text-navy" aria-label="Debug">
+              <p>
+                state: <b data-testid="debug-state">{state}</b> · question {qIndex + 1} · mode {autoAdvance ? 'auto' : 'done'}
+                {typedOnlyRef.current ? ' · typed only' : ''}
+              </p>
+              <p>
+                level {meter.level.toFixed(3)} · noise {meter.noise?.toFixed(3) ?? '–'} · threshold {meter.threshold?.toFixed(3) ?? '–'} · silence timer{' '}
+                {meter.silenceLeft !== null ? `${Math.max(0, meter.silenceLeft)} ms left` : 'off'}
+              </p>
+              <ol className="mt-1 text-navy-muted">
+                {events.map((ev, i) => (
+                  <li key={i}>{ev}</li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };

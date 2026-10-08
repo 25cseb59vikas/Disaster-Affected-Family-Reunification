@@ -73,7 +73,7 @@ export const MatchQueuePage: React.FC = () => {
               role="tab"
               aria-selected={filter === f}
               onClick={() => setFilter(f)}
-              className={`min-h-[40px] px-3 rounded-badge text-sm font-medium ${filter === f ? 'bg-surface text-navy shadow-subtle' : 'text-navy-muted'}`}
+              className={`min-h-[44px] px-3 rounded-badge text-sm font-medium ${filter === f ? 'bg-surface text-navy shadow-subtle' : 'text-navy-muted'}`}
             >
               {label}
             </button>
@@ -85,7 +85,7 @@ export const MatchQueuePage: React.FC = () => {
           placeholder="Name or code"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          className="input h-11 flex-1 min-w-[160px]"
+          className="input h-12 lg:h-11 flex-1 min-w-[160px]"
         />
       </div>
 
@@ -140,6 +140,7 @@ export const MatchQueuePage: React.FC = () => {
             })}
           </tbody>
         </table>
+        {!data && <p className="p-4 text-center text-base text-navy-muted" role="status">Loading…</p>}
         {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">{noneAtAll ? 'No matches yet' : 'No matches here.'}</p>}
       </div>
 
@@ -211,7 +212,7 @@ const PersonCard: React.FC<{ r?: PersonRecord; title: string }> = ({ r, title })
         <>
           <div className="flex items-center gap-2 mt-1 mb-2">
             {r.photo && <img src={r.photo} alt="" className="w-10 h-10 rounded-badge object-cover border border-borderSlate" />}
-            <a {...linkProps(`/console/records/${r.id}`)} className="min-w-0 text-base font-semibold text-civilBlue hover:underline break-words">
+            <a {...linkProps(`/console/records/${r.id}`)} className="min-w-0 min-h-[44px] inline-flex items-center text-base font-semibold text-civilBlue hover:underline break-words">
               {r.name ?? 'Name not known'}
             </a>
           </div>
@@ -235,7 +236,7 @@ const PersonCard: React.FC<{ r?: PersonRecord; title: string }> = ({ r, title })
 };
 
 /** Evidence and the authority's decision for one pair. */
-const MatchDetail: React.FC<{ id: string; data: ConsoleData }> = ({ id, data }) => {
+export const MatchDetail: React.FC<{ id: string; data: ConsoleData }> = ({ id, data }) => {
   const { addEvent } = useApp();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [familyOpen, setFamilyOpen] = useState(false);
@@ -409,15 +410,18 @@ const MatchDetail: React.FC<{ id: string; data: ConsoleData }> = ({ id, data }) 
         <section className="card" aria-label="Decision">
           <h2 className="text-sm font-medium text-navy-muted mb-2">Your decision</h2>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={accept}
-              disabled={Boolean(accepted) && (!bothSites || familyOpen)}
-              className="btn-primary w-auto px-6 bg-verified hover:bg-verified/90 active:bg-verified disabled:cursor-default"
-            >
-              <Check className="w-5 h-5" strokeWidth={2} />
-              {bothSites ? 'Accept: run the family check' : accepted ? 'Accepted' : 'Accept'}
-            </button>
+            {/* One primary action at a time: once the family check is open, its button is the primary one. */}
+            {!(bothSites && familyOpen) && (
+              <button
+                type="button"
+                onClick={accept}
+                disabled={Boolean(accepted) && !bothSites}
+                className="btn-primary w-auto px-6 bg-verified hover:bg-verified/90 active:bg-verified disabled:cursor-default"
+              >
+                <Check className="w-5 h-5" strokeWidth={2} />
+                {bothSites ? 'Accept: run the family check' : accepted ? 'Accepted' : 'Accept'}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setRejectOpen(o => !o)}

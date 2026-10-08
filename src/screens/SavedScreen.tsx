@@ -30,6 +30,7 @@ export const SavedScreen: React.FC = () => {
   return (
     <Screen
       nav="register"
+      width="wide"
       footer={
         <button type="button" onClick={() => navigateTo('register_choose_type')} className="btn-primary">
           Register next person
@@ -41,6 +42,8 @@ export const SavedScreen: React.FC = () => {
         <h1 className="text-xl font-semibold text-navy">Saved</h1>
       </div>
 
+      {/* Desktop: the code and the possible match side by side. */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
       {suggestion && (
         <button
           type="button"
@@ -48,7 +51,7 @@ export const SavedScreen: React.FC = () => {
             setSelectedSuggestionId(suggestion.id);
             navigateTo('match_review');
           }}
-          className="card w-full mb-3 text-left bg-pending-bg border-pending-border active:bg-pressed"
+          className="card w-full mb-3 lg:mb-0 lg:order-2 text-left bg-pending-bg border-pending-border hover:border-pending active:bg-pressed"
         >
           <span className="block text-base font-semibold text-navy">
             {record.type === 'found' ? 'Someone may be looking for this person.' : 'Someone like this person may have been found.'}
@@ -65,6 +68,7 @@ export const SavedScreen: React.FC = () => {
         <p className="text-sm text-navy-muted">
           {waiting ? 'Waiting to sync' : 'Synced'}
         </p>
+      </div>
       </div>
     </Screen>
   );

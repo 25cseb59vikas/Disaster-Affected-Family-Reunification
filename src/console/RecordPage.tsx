@@ -4,9 +4,85 @@ import { recordStatus } from '../matchStatus';
 import { siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
 import { linkProps } from '../route';
-import { personLabel, useConsoleData } from './data';
+import { personLabel, useConsoleData, type ConsoleData } from './data';
+import type { PersonRecord } from '../types';
 import { PAIR_STATUS } from './MatchQueuePage';
 import { STATUS_BADGE, statusLabel, Thumb } from './RecordsPage';
+
+/** The record's fields as label/value pairs, shared by the record page and the panel beside the lists. */
+export function recordRows(r: PersonRecord): Array<[string, string | null | undefined]> {
+  const seeking = r.type === 'seeking';
+  return [
+    ['Type', seeking ? 'Search for a missing person' : 'Person found'],
+    ['Gender', r.gender === 'unknown' ? null : r.gender],
+    ['Age', r.age_band],
+    ['Village', r.village],
+    [seeking ? 'Searching' : 'Relative', r.relative_name ? `${r.relative_name}${r.relative_relation ? ` (${r.relative_relation})` : ''}` : null],
+    ...(seeking ? ([['Contact phone', r.contact_phone]] as Array<[string, string | null | undefined]>) : []),
+    ['Clothing, marks', r.clothing_marks],
+    [seeking ? 'Last seen' : 'Found', seeking ? r.last_seen : r.found_where],
+    ...(!seeking && r.looking_for.length
+      ? ([['Looking for', r.looking_for.map(p => `${p.relation}${p.name ? ` ${p.name}` : ''}`).join(', ')]] as Array<[string, string]>)
+      : []),
+    ['Registered', `${siteName(r.site)} · ${r.registered_by || 'unknown'} · ${timeSince(r.created_at)}`]
+  ];
+}
+
+/** Desktop panel beside the Records and Priority lists: the record at a glance, with a link to the full page. */
+export const RecordPanel: React.FC<{ id: string; data: ConsoleData }> = ({ id, data }) => {
+  const r = data.byId.get(id);
+  if (!r) return <p className="card text-base text-navy-muted">Record not found.</p>;
+  const { status } = recordStatus(r.id, data.suggestions, data.events);
+  const pairs = data.suggestions.filter(s => s.found_id === r.id || s.seeking_id === r.id).sort((a, b) => b.score - a.score);
+  return (
+    <article aria-label="Record" className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Thumb r={r} size="w-14 h-14" />
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold text-navy break-words">{r.name ?? 'Name not known'}</h2>
+          <p className="text-sm text-navy-muted">
+            {r.code} · {siteName(r.site)} <span className={`badge ml-1 ${STATUS_BADGE[status]}`}>{statusLabel(r, status)}</span>
+          </p>
+        </div>
+      </div>
+      <dl className="card grid grid-cols-2 gap-x-4 gap-y-2">
+        {recordRows(r).map(([label, value]) => (
+          <div key={label} className="min-w-0">
+            <dt className="text-xs text-navy-muted">{label}</dt>
+            <dd className={`text-base break-words first-letter:uppercase ${value ? 'text-navy' : 'text-navy-muted italic'}`}>{value || 'Not recorded'}</dd>
+          </div>
+        ))}
+      </dl>
+      <section className="card">
+        <h3 className="text-sm font-medium text-navy-muted mb-1">Suggested matches</h3>
+        {pairs.length ? (
+          <ul>
+            {pairs.map(s => {
+              const other = data.byId.get(s.found_id === r.id ? s.seeking_id : s.found_id);
+              const st = PAIR_STATUS[data.states.get(s.id)!.status];
+              return (
+                <li key={s.id}>
+                  <a {...linkProps(`/console/matches?pair=${encodeURIComponent(s.id)}`)} className="flex items-center gap-2 min-h-[44px] rounded-button hover:bg-canvas">
+                    <span className={`text-lg font-semibold w-9 ${s.band === 'Strong' ? 'text-verified' : 'text-pending'}`}>{s.score}</span>
+                    <span className="flex-1 min-w-0 truncate text-base text-navy">{personLabel(other)}</span>
+                    <span className={`badge ${st[1]}`}>{st[0]}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-base text-navy-muted">No suggested matches yet.</p>
+        )}
+      </section>
+      <div className="flex justify-end">
+        <a {...linkProps(`/console/records/${r.id}`)} className="btn-text">
+          Open the full record
+        </a>
+      </div>
+    </article>
+  );
+};
 
 /** /console/records/<id>: the full record, its status and every suggested pair it is part of. */
 export const RecordPage: React.FC<{ id: string }> = ({ id }) => {
@@ -31,20 +107,7 @@ export const RecordPage: React.FC<{ id: string }> = ({ id }) => {
 
   const { status } = recordStatus(r.id, data.suggestions, data.events);
   const seeking = r.type === 'seeking';
-  const rows: Array<[string, string | null | undefined]> = [
-    ['Type', seeking ? 'Search for a missing person' : 'Person found'],
-    ['Gender', r.gender === 'unknown' ? null : r.gender],
-    ['Age', r.age_band],
-    ['Village', r.village],
-    [seeking ? 'Searching' : 'Relative', r.relative_name ? `${r.relative_name}${r.relative_relation ? ` (${r.relative_relation})` : ''}` : null],
-    ...(seeking ? ([['Contact phone', r.contact_phone]] as Array<[string, string | null | undefined]>) : []),
-    ['Clothing, marks', r.clothing_marks],
-    [seeking ? 'Last seen' : 'Found', seeking ? r.last_seen : r.found_where],
-    ...(!seeking && r.looking_for.length
-      ? ([['Looking for', r.looking_for.map(p => `${p.relation}${p.name ? ` ${p.name}` : ''}`).join(', ')]] as Array<[string, string]>)
-      : []),
-    ['Registered', `${siteName(r.site)} · ${r.registered_by || 'unknown'} · ${timeSince(r.created_at)}`]
-  ];
+  const rows = recordRows(r);
   const pairs = data.suggestions.filter(s => s.found_id === r.id || s.seeking_id === r.id).sort((a, b) => b.score - a.score);
 
   return (

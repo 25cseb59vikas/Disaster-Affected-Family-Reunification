@@ -75,6 +75,11 @@ export const OverviewPage: React.FC = () => {
   return (
     <>
       <h1 className="screen-title">Overview</h1>
+      {!data && (
+        <p className="card mb-4 text-center text-base text-navy-muted" role="status">
+          Loading…
+        </p>
+      )}
 
       {total && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -95,7 +100,34 @@ export const OverviewPage: React.FC = () => {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <section className="min-w-0">
           <h2 className="text-lg font-semibold text-navy mb-2">By site</h2>
-          <div className="card p-0 overflow-hidden">
+          {/* Phones: one row per site with its four counts; the table from 640px. */}
+          <ul className="sm:hidden card p-0 divide-y divide-borderSlate">
+            {data &&
+              ROWS.map(site => {
+                const c = countsFor(data, site.id);
+                return (
+                  <li key={site.id} className="px-3 py-2.5">
+                    <p className="text-base font-medium text-navy">{site.name}</p>
+                    <dl className="grid grid-cols-4 gap-2 mt-1 text-center">
+                      {(
+                        [
+                          ['Registered', c.registered],
+                          ['Searching', c.searching],
+                          ['Possible', c.possible],
+                          ['Verified', c.verified]
+                        ] as const
+                      ).map(([label, value]) => (
+                        <div key={label} className="min-w-0 flex flex-col-reverse">
+                          <dt className="text-xs text-navy-muted truncate">{label}</dt>
+                          <dd className="text-base font-semibold text-navy">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </li>
+                );
+              })}
+          </ul>
+          <div className="hidden sm:block card p-0 overflow-hidden">
             <table className="w-full text-sm text-left">
               <thead className="bg-pressed text-navy-muted">
                 <tr>

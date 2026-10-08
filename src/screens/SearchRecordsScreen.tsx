@@ -91,7 +91,7 @@ export const SearchRecordsScreen: React.FC = () => {
         <h1 className="screen-title">Search</h1>
         {controls}
         <DesktopList
-          empty={data && shown.length === 0 ? (pool.length === 0 ? (here ? 'Nobody registered here yet.' : 'No searches yet.') : `Nothing matches "${query}".`) : null}
+          empty={!data ? 'Loading…' : shown.length === 0 ? (pool.length === 0 ? (here ? 'Nobody registered here yet.' : 'No searches yet.') : `Nothing matches "${query}".`) : null}
           head={here ? ['', 'Person', 'Code', 'Status'] : ['Missing person', 'Registered', 'Status']}
           cols={here ? 'grid-cols-[48px_minmax(0,1fr)_88px_auto]' : 'grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]'}
           rows={shown.map(r => {
@@ -186,6 +186,7 @@ export const SearchRecordsScreen: React.FC = () => {
           );
         })}
 
+        {!data && <p className="card text-center text-base text-navy-muted md:col-span-full" role="status">Loading…</p>}
         {data && shown.length === 0 && (
           <p className="card text-center text-base text-navy-muted md:col-span-full">
             {pool.length === 0 ? (view === 'here' ? 'Nobody registered here yet.' : 'No searches yet.') : `Nothing matches "${query}".`}

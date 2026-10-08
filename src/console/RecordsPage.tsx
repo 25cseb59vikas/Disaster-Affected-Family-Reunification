@@ -3,8 +3,10 @@ import { recordStatus, type SearchStatus } from '../matchStatus';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES, siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
 import type { PersonRecord } from '../types';
-import { go, linkProps } from '../route';
+import { go, linkProps, useRoute } from '../route';
 import { useConsoleData } from './data';
+import { useIsDesktop } from '../useIsDesktop';
+import { RecordPanel } from './RecordPage';
 
 export const STATUS_BADGE: Record<SearchStatus, string> = {
   Searching: 'bg-canvas text-navy-muted border-borderSlate',
@@ -26,6 +28,10 @@ export const Thumb: React.FC<{ r: PersonRecord; size?: string }> = ({ r, size = 
 /** /console/records: every record from every site, searchable and filterable. */
 export const RecordsPage: React.FC = () => {
   const data = useConsoleData();
+  const desktop = useIsDesktop();
+  const { params } = useRoute();
+  // Desktop: the chosen record shows beside the table (?id=); phones and tablets open the record page.
+  const open = (id: string) => go(desktop ? `/console/records?id=${encodeURIComponent(id)}` : `/console/records/${id}`);
   const [query, setQuery] = useState('');
   const [site, setSite] = useState('');
   const [type, setType] = useState('');
@@ -37,7 +43,8 @@ export const RecordsPage: React.FC = () => {
     .filter(({ r, status: st }) => (!site || r.site === site) && (!type || r.type === type) && (!status || st === status))
     .filter(({ r }) => !q || [r.name, r.code, r.village, r.relative_name, r.contact_phone, r.clothing_marks].some(v => v?.toLowerCase().includes(q)));
 
-  const select = 'input h-11 w-auto min-w-0 pr-8';
+  const select = 'input h-12 lg:h-11 w-auto min-w-0 pr-8';
+  const selectedId = params.get('id') ?? rows[0]?.r.id ?? null;
 
   return (
     <>
@@ -49,7 +56,7 @@ export const RecordsPage: React.FC = () => {
           placeholder="Name, code, village, relative or phone"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          className="input h-11 flex-1 min-w-[200px]"
+          className="input h-12 lg:h-11 flex-1 min-w-[200px]"
         />
         <select aria-label="Site" value={site} onChange={e => setSite(e.target.value)} className={select}>
           <option value="">All sites</option>
@@ -77,6 +84,7 @@ export const RecordsPage: React.FC = () => {
         {rows.length} of {data?.records.length ?? 0} records
       </p>
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-6 lg:items-start">
       <div className="hidden md:block card p-0">
         <table className="w-full text-sm text-left table-fixed">
           <thead className="text-navy-muted">
@@ -85,40 +93,52 @@ export const RecordsPage: React.FC = () => {
                 <span className="sr-only">Photo</span>
               </th>
               <th className="px-3 py-2 font-medium">Name</th>
-              <th className="w-24 px-3 py-2 font-medium">Type</th>
+              <th className="w-24 px-3 py-2 font-medium lg:hidden 2xl:table-cell">Type</th>
               <th className="w-24 px-3 py-2 font-medium">Code</th>
               <th className="w-32 px-3 py-2 font-medium">Site</th>
-              <th className="hidden xl:table-cell w-24 px-3 py-2 font-medium">Age</th>
-              <th className="hidden lg:table-cell px-3 py-2 font-medium">Village</th>
+              <th className="hidden 2xl:table-cell w-24 px-3 py-2 font-medium">Age</th>
+              <th className="hidden 2xl:table-cell px-3 py-2 font-medium">Village</th>
               <th className="w-40 px-3 py-2 font-medium">Status</th>
-              <th className="hidden xl:table-cell w-28 px-3 py-2 font-medium">Registered</th>
+              <th className="hidden 2xl:table-cell w-28 px-3 py-2 font-medium">Registered</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ r, status: st }) => (
-              <tr key={r.id} onClick={() => go(`/console/records/${r.id}`)} className="border-t border-borderSlate cursor-pointer hover:bg-canvas">
+              <tr
+                key={r.id}
+                onClick={() => open(r.id)}
+                aria-selected={desktop && r.id === selectedId}
+                className={`border-t border-borderSlate cursor-pointer ${desktop && r.id === selectedId ? 'bg-terracotta-soft' : 'hover:bg-canvas'}`}
+              >
                 <td className="px-3 py-2">
                   <Thumb r={r} />
                 </td>
                 <td className="px-3 py-2 truncate">
-                  <a {...linkProps(`/console/records/${r.id}`)} className="font-semibold text-navy hover:underline">
+                  <a {...linkProps(desktop ? `/console/records?id=${encodeURIComponent(r.id)}` : `/console/records/${r.id}`)} className="min-h-[44px] inline-flex items-center font-semibold text-navy hover:underline">
                     {r.name ?? 'Name not known'}
                   </a>
                 </td>
-                <td className="px-3 py-2 text-navy">{r.type === 'found' ? 'Found' : 'Search'}</td>
+                <td className="px-3 py-2 text-navy lg:hidden 2xl:table-cell">{r.type === 'found' ? 'Found' : 'Search'}</td>
                 <td className="px-3 py-2 text-navy-muted">{r.code}</td>
                 <td className="px-3 py-2 text-navy truncate">{siteName(r.site)}</td>
-                <td className="hidden xl:table-cell px-3 py-2 text-navy">{r.age_band ?? '–'}</td>
-                <td className="hidden lg:table-cell px-3 py-2 text-navy truncate">{r.village ?? '–'}</td>
+                <td className="hidden 2xl:table-cell px-3 py-2 text-navy">{r.age_band ?? '–'}</td>
+                <td className="hidden 2xl:table-cell px-3 py-2 text-navy truncate">{r.village ?? '–'}</td>
                 <td className="px-3 py-2">
                   <span className={`badge ${STATUS_BADGE[st]}`}>{statusLabel(r, st)}</span>
                 </td>
-                <td className="hidden xl:table-cell px-3 py-2 text-navy-muted">{timeSince(r.created_at)}</td>
+                <td className="hidden 2xl:table-cell px-3 py-2 text-navy-muted">{timeSince(r.created_at)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {!data && <p className="p-4 text-center text-base text-navy-muted" role="status">Loading…</p>}
         {data && rows.length === 0 && <p className="p-4 text-center text-base text-navy-muted">{data.records.length === 0 ? 'No records yet' : 'No records match.'}</p>}
+      </div>
+      {desktop && data && (
+        <aside className="lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:pr-1" aria-label="Selected record">
+          {selectedId ? <RecordPanel id={selectedId} data={data} /> : <p className="card text-base text-navy-muted">Select a record to see it here.</p>}
+        </aside>
+      )}
       </div>
 
       <div className="md:hidden card-stack">

@@ -41,7 +41,7 @@ export const RolePickerPage: React.FC = () => (
         ))}
       </div>
       <p className="text-sm text-navy-muted mt-4">This device remembers your choice. You can change it later.</p>
-      <InstallButton className="mt-4" />
+      <InstallButton className="mt-4 self-start" />
     </main>
     <DemoNotice />
   </div>

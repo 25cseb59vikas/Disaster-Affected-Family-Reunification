@@ -61,7 +61,8 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
   const [en, ta] = result ? SENTENCES[result.status](result.help_desk ?? '') : ['', ''];
 
   return (
-    <>
+    <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
+      <div>
       <label htmlFor="record-code" className="field-label">
         Record code
       </label>
@@ -80,6 +81,9 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
       </button>
 
       {error && <p role="alert" className="card mb-3 bg-pending-bg border-pending-border text-base text-navy">{error}</p>}
+      </div>
+
+      <div>
 
       {result && (
         <article className="card mb-3" aria-live="polite">
@@ -96,14 +100,18 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
         <p className="text-sm text-navy-muted mt-2">Helpline</p>
         <p className="text-base text-navy">Number to be added</p>
       </div>
-    </>
+      </div>
+    </div>
   );
 };
 
 /** Public page for families: opened at /status, with the record code typed in or passed as ?code=. */
 export const FamilyStatusPage: React.FC = () => (
-  <Screen header={false} width="narrow">
-    <h1 className="screen-title pt-4">Family status</h1>
+  <Screen header={false} width="wide">
+    <a href="/" className="btn-text -ml-2">
+      Back to Reunite
+    </a>
+    <h1 className="screen-title pt-2">Family status</h1>
     <StatusChecker
       initialCode={new URLSearchParams(location.search).get('code') ?? ''}
       onUrl={c => history.replaceState(null, '', `/status?code=${encodeURIComponent(c)}`)}

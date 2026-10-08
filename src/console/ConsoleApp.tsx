@@ -115,7 +115,7 @@ const SyncLine: React.FC = () => {
         {text}
       </span>
       {syncStatus !== 'syncing' && (
-        <button type="button" onClick={() => syncNow()} className="shrink-0 text-white/90 hover:text-white hover:underline">
+        <button type="button" onClick={() => syncNow()} className="shrink-0 min-h-[44px] px-2 -mr-2 rounded-button text-white/90 hover:text-white hover:bg-white/10">
           Sync now
         </button>
       )}
@@ -166,20 +166,20 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
             </a>
           ))}
         </nav>
-        <div className="px-4 py-3 border-t border-white/10 lg:mt-auto space-y-2">
+        <div className="px-4 py-1 lg:py-3 border-t border-white/10 lg:mt-auto lg:space-y-2">
           <SyncLine />
-          <p className="text-sm text-white/80 truncate">
+          <p className="hidden lg:block text-sm text-white/80 truncate">
             Signed in as <span className="font-semibold text-white">{officer}</span>
           </p>
-          <div className="flex flex-wrap gap-x-3 text-sm">
-            <button type="button" onClick={onChangeOfficer} className="text-white/90 hover:underline min-h-[32px]">
+          <div className="flex flex-wrap gap-x-1 -ml-2 text-sm">
+            <button type="button" onClick={onChangeOfficer} className="min-h-[44px] px-2 rounded-button text-white/90 hover:text-white hover:bg-white/10">
               Change name
             </button>
-            <button type="button" onClick={switchRole} className="text-white/90 hover:underline min-h-[32px]">
+            <button type="button" onClick={switchRole} className="min-h-[44px] px-2 rounded-button text-white/90 hover:text-white hover:bg-white/10">
               Change role
             </button>
           </div>
-          <InstallButton tone="dark" />
+          <InstallButton tone="dark" className="hidden lg:inline-flex" />
         </div>
       </aside>
 

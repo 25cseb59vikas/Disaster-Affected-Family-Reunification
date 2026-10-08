@@ -49,16 +49,16 @@ export const FamilyApp: React.FC = () => {
   return (
     <div className="min-h-dvh bg-canvas flex flex-col">
       <header className="bg-header text-white">
-        <div className="mx-auto max-w-app px-4 h-header flex items-center gap-2">
-          <a {...linkProps('/family')} className="flex-1 min-w-0">
+        <div className="mx-auto max-w-app md:max-w-3xl lg:max-w-[1200px] px-4 lg:px-8 h-header flex items-center gap-2">
+          <a {...linkProps('/family')} className="flex-1 min-w-0 min-h-[44px] flex flex-col justify-center rounded-button">
             <span className="block text-base font-semibold">Reunite</span>
             <span className="block text-xs text-white/70">For families</span>
           </a>
           {waiting > 0 && <span className="text-xs text-white/80">{waiting} waiting to send</span>}
         </div>
       </header>
-      <main className="flex-1 w-full max-w-app mx-auto px-4 py-4">{page}</main>
-      <div className="w-full max-w-app mx-auto px-4 pb-2 flex flex-wrap items-center gap-x-3">
+      <main className="flex-1 w-full max-w-app md:max-w-3xl lg:max-w-[1200px] mx-auto px-4 py-4 lg:px-8 lg:py-8">{page}</main>
+      <div className="w-full max-w-app md:max-w-3xl lg:max-w-[1200px] mx-auto px-4 lg:px-8 pb-2 flex flex-wrap items-center gap-x-3">
         <button type="button" onClick={switchRole} className="btn-text -ml-2 text-sm">
           Change role
         </button>
@@ -96,7 +96,7 @@ const HomePage: React.FC = () => {
   return (
     <>
       <h1 className="screen-title">How can we help?</h1>
-      <div className="card-stack">
+      <div className="grid gap-3 md:grid-cols-2 [&>*]:min-w-0">
         <Choice href="/family/report" Icon={UserSearch} title="Report a missing person" helper="Tell us who you are looking for" />
         <Choice href="/family/status" Icon={Search} title="Check status" helper="Use the reference code you were given" />
         <Choice href="/family/help" Icon={LifeBuoy} title="Get help" helper="Help desks and what to bring" />
@@ -106,7 +106,7 @@ const HomePage: React.FC = () => {
       {mine.length > 0 && (
         <section className="mt-6">
           <h2 className="text-sm font-medium text-navy-muted mb-2">Reported from this phone</h2>
-          <div className="card-stack">
+          <div className="grid gap-3 md:grid-cols-2 [&>*]:min-w-0">
             {mine.map(r => (
               <a key={r.id} {...linkProps(`/family/status?code=${encodeURIComponent(r.code)}`)} className="card flex items-center gap-3 hover:border-navy/30">
                 <span className="flex-1 min-w-0">
@@ -178,9 +178,11 @@ const ReportPage: React.FC = () => {
       </button>
       <h1 className="screen-title">Check the details</h1>
       <DetailsForm formId="family-report" type="seeking" draft={draft} variant="family" onSave={save} />
-      <button type="submit" form="family-report" disabled={saving} className="btn-primary mt-6">
-        {saving ? 'Saving…' : 'Send report'}
-      </button>
+      <div className="sticky bottom-0 -mx-4 px-4 py-3 mt-6 bg-canvas border-t border-borderSlate lg:static lg:mx-0 lg:px-0 lg:border-0 lg:flex lg:justify-end">
+        <button type="submit" form="family-report" disabled={saving} className="btn-primary">
+          {saving ? 'Saving…' : 'Send report'}
+        </button>
+      </div>
       <p className="text-sm text-navy-muted mt-2">Only relief staff see your report. You will get a reference code to check its status.</p>
     </>
   );
@@ -202,7 +204,8 @@ const HelpPage: React.FC = () => (
   <>
     <Back />
     <h1 className="screen-title">Get help</h1>
-    <section className="card mb-3">
+    <div className="grid gap-3 lg:grid-cols-2 [&>*]:min-w-0">
+    <section className="card">
       <h2 className="text-lg font-semibold text-navy">Help desks</h2>
       <ul className="mt-2 space-y-2">
         {[...SITES.map(s => ({ id: s.id, name: s.name, helper: s.helper })), { id: AUTHORITY.id, name: AUTHORITY.name, helper: 'Coordination desk' }].map(s => (
@@ -214,7 +217,7 @@ const HelpPage: React.FC = () => (
       </ul>
       <p className="text-sm text-navy-muted mt-3">Any help desk can look up a reference code from any site.</p>
     </section>
-    <section className="card mb-3">
+    <section className="card">
       <h2 className="text-lg font-semibold text-navy">What to bring</h2>
       <ul className="mt-2 space-y-1 text-base text-navy list-disc pl-5">
         <li>Your reference code, if you have one</li>
@@ -225,7 +228,7 @@ const HelpPage: React.FC = () => (
         Staff confirm identity and family relationships before they share where someone is. This protects everyone, especially children.
       </p>
     </section>
-    <section className="card mb-3">
+    <section className="card">
       <h2 className="text-lg font-semibold text-navy">If a child is alone</h2>
       <p className="text-base text-navy mt-1">Stay with the child and tell the nearest volunteer or help desk.</p>
     </section>
@@ -236,5 +239,6 @@ const HelpPage: React.FC = () => (
         Or use the voice line (demo)
       </a>
     </section>
+    </div>
   </>
 );

@@ -18,6 +18,12 @@
     overflow-x: hidden;
   }
 
+  /* rem-based sizes (h-12 = 48px inputs and buttons, h-11 = 44px targets) need a 16px root;
+     body text stays at the base size of the type scale. */
+  html {
+    font-size: 16px;
+  }
+
   button,
   a,
   input,
