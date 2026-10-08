@@ -1,0 +1,127 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#123047"><link rel="manifest" href="/manifest.webmanifest"><title>REUNITE AI — Relief Desk</title><style>
+:root{font-family:system-ui,Segoe UI,sans-serif;color:#173047;background:#edf4f7}*{box-sizing:border-box}body{margin:0}header{background:#123047;color:white;padding:25px max(20px,calc((100% - 1000px)/2))}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#c6e5ef}main{max-width:1000px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{background:white;border:1px solid #d5e3eb;border-radius:15px;padding:20px;box-shadow:0 4px 15px #1230470a}.wide{grid-column:1/-1}label{display:block;font-size:13px;font-weight:650;margin:12px 0 5px}input,select,textarea{width:100%;border:1px solid #bbced8;border-radius:8px;padding:10px;font:inherit}textarea{resize:vertical}button{background:#087d85;color:white;border:0;border-radius:8px;padding:11px 17px;font-weight:700;cursor:pointer;margin-top:15px}button.secondary{background:#21445b}.status{padding:10px 14px;background:#dff6e9;border-radius:8px;margin-bottom:16px}.small{font-size:13px;color:#53697a}.record{padding:12px;border-bottom:1px solid #e3ebef}.record:last-child{border:0}.pill{background:#e6f4f7;padding:4px 8px;border-radius:50px;font-size:12px}#message{font-weight:600;color:#086c71}@media(max-width:680px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}}</style></head><body><header><h1>⛑ REUNITE AI</h1><p>Offline-first family reunification • HackNext'26 prototype</p></header><main><div class="status" id="status">Checking network…</div><div class="grid"><section class="panel"><h2>Register a person</h2><form id="form"><label>Relief camp</label><select name="camp"><option>Camp 1</option><option>Camp 2</option></select><label>Record type</label><select name="kind"><option value="survivor">Survivor found</option><option value="missing">Missing-person report</option></select><label>Person's name</label><input name="name" required maxlength="150"><label>Approximate age</label><input name="age" type="number" min="0" max="120"><label>Family member's name</label><input name="relative_name" maxlength="150"><label>Relationship</label><select name="relationship"><option value="">Not specified</option><option>Father</option><option>Mother</option><option>Son</option><option>Daughter</option><option>Sibling</option><option>Other</option></select><label>Last known location</label><input name="location" maxlength="150">
+<label>Additional details</label>
+<textarea name="notes" rows="2" maxlength="1000"></textarea>
+
+<div style="margin-top:15px;">
+    <label for="survivorPhoto">📸 Person Photo</label>
+
+    <input
+        type="file"
+        id="survivorPhoto"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+    >
+<div style="margin-top:12px;">
+    <button type="button" id="openCamera">📷 Open Camera</button>
+    <button type="button" id="capturePhoto" style="display:none;">
+        📸 Capture Photo
+    </button>
+    <button type="button" id="closeCamera" style="display:none;">
+        ✕ Close Camera
+    </button>
+</div>
+
+<video
+    id="cameraPreview"
+    autoplay
+    playsinline
+    muted
+    style="display:none;width:100%;max-width:400px;margin-top:12px;border-radius:10px;">
+</video>
+
+<canvas id="cameraCanvas" style="display:none;"></canvas>
+
+<p id="cameraStatus" role="status"></p>
+    <button type="button" id="analyzePhoto">
+        🔍 Extract Visible Details
+    </button>
+
+    <p id="photoStatus" role="status"></p>
+
+    <label for="photoDescription">AI-Extracted Details</label>
+    <textarea
+    id="photoDescription"
+    name="ai_description"
+    rows="3"
+    maxlength="1000"
+        placeholder="Visible clothing, colors and belongings will appear here"
+    ></textarea>
+
+    <p class="small">
+        AI-generated description. Officer review required.
+        The photo is processed locally and is not saved with the registration.
+    </p>
+</div>
+
+<button type="submit">Save offline</button>
+</form><p id="message" role="status"></p>
+
+</section><section class="panel"><h2>Camp operations</h2><p class="small">Every registration is saved in this browser first. Sync sends records when the server can be reached.</p><button id="sync" class="secondary">↻ Sync camps now</button><button id="matches">Find possible matches</button><button id="demo" class="secondary">Load fictional demo family</button><p id="syncMessage" role="status" class="small"></p><h3>Potential matches</h3><div id="matchList" class="small">Sync both camps, then run matching.</div><p class="small">⚠ Matches are suggestions only. Authorized staff must verify identity and relationships before disclosure.</p></section><section class="panel wide"><h2>Locally available records <span class="pill" id="count">0</span></h2><div id="records" class="small">No records yet.</div></section></div><p class="small">Demo uses fictional information. Do not enter real survivor personal data. Device storage is not encrypted by this prototype.</p></main>
+
+<section class="panel" style="max-width:1000px;margin:20px auto;">
+    <h2>👨‍👩‍👧‍👦 Pre-Disaster Family Database</h2>
+    <p class="small">
+        Fictional household records for family reunification.
+    </p>
+
+    <button id="loadFamilies">
+        View Registered Families
+    </button>
+<button id="findFamilyConnections">
+    🔍 Find Family Connections
+</button>
+
+<div id="familyConnections"></div>
+    <div id="familyList"></div>
+</section>
+
+
+
+
+
+<section class="panel">
+    <h2>👮 Officer Dashboard</h2>
+    <p>Family reunification case overview</p>
+
+    <button id="refreshDashboard" type="button">
+    ↻ Refresh Dashboard
+</button>
+
+<button id="clearDemoRecords" type="button"
+        style="background:#dc2626;color:white;margin-top:10px;">
+    🗑 Clear All Demo Registrations
+</button>
+
+    <div style="display:flex;gap:15px;flex-wrap:wrap;margin-top:15px;">
+        <div class="record">
+            <h3>⏳ Pending</h3>
+            <h2 id="pendingCount">0</h2>
+        </div>
+
+        <div class="record">
+            <h3>✓ Verified</h3>
+            <h2 id="verifiedCount">0</h2>
+        </div>
+
+        <div class="record">
+            <h3>✕ Rejected</h3>
+            <h2 id="rejectedCount">0</h2>
+        </div>
+    </div>
+    
+    </div>
+
+    <hr>
+
+    <h3>📸 AI Photo Descriptions</h3>
+    <div id="officerDescriptions">
+        <p>No descriptions loaded yet.</p>
+    </div>
+
+</section>
+</section>
+
+<script src="/app.js"></script>
+
+</body></html>
