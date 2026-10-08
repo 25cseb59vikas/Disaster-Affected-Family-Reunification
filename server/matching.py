@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from rapidfuzz import fuzz
 
 from . import store
-from .match_config import (AMBIGUOUS_GAP, NAME_CONFLICT_SIM, NAME_RARITY_FLOOR, NAME_SIM_FLOOR, POSSIBLE,
+from .match_config import (AMBIGUOUS_GAP, NAME_CONFLICT_SIM, NAMELESS_MIN_CLUES, NAME_RARITY_FLOOR, NAME_SIM_FLOOR, POSSIBLE,
                            RELATIVE_SIM_MIN, STRONG, VILLAGE_CONFLICT_SIM, VILLAGE_SIM_MIN, WEIGHTS)
 
 # Honorifics stripped from names (only when another word remains: "Selvi" alone is a name).
@@ -147,6 +147,7 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
     """Evidence for found record f and seeking record s."""
     pts = 0.0
     pro, con, unknown = [], [], []
+    clues: set[str] = set()  # independent agreeing clues besides gender and age
     w = WEIGHTS
 
     # Name
@@ -198,6 +199,7 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
     if rel_pts:
         pts += rel_pts
         pro.append(rel_reason)
+        clues.add("relative")
     elif f_rel and s_rel:
         same_role = (f.get("relative_relation") or "").lower() == (s.get("relative_relation") or "").lower() != ""
         if same_role and sim is not None and sim < NAME_CONFLICT_SIM:
@@ -212,16 +214,24 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
         vsim = fuzz.ratio(sound_key(fv), sound_key(sv))
         if vsim >= VILLAGE_SIM_MIN:
             pts += w["village"]
+            clues.add("village")
             pro.append(f"Same village: {fv}" if vsim >= 95 else f"Villages sound alike: {fv} / {sv}")
         elif vsim < VILLAGE_CONFLICT_SIM:
             pts += w["village_conflict"]
             con.append(f"Different villages: {fv} / {sv}")
     else:
         unknown.append("village")
-    fw = f.get("found_where")
+    # Where found vs the family's village or where they last saw the person.
+    # The exact place is not repeated in the reason; it is shown only after verification.
+    fw, last_seen = f.get("found_where"), s.get("last_seen")
     if fw and sv and fuzz.partial_ratio(sound_key(sv), sound_key(fw)) >= VILLAGE_SIM_MIN:
         pts += w["found_where_village"]
-        pro.append(f"Found at {fw}, near the family's village")
+        pro.append(f"Found near the family's village ({sv})")
+        clues.add("location")
+    elif fw and last_seen and fuzz.token_set_ratio(sound_key(last_seen), sound_key(fw)) >= VILLAGE_SIM_MIN:
+        pts += w["found_where_village"]
+        pro.append("Found where the family last saw them")
+        clues.add("location")
 
     # Clothing and marks
     kf, ks = keywords(f.get("clothing_marks")), keywords(s.get("clothing_marks"))
@@ -233,6 +243,7 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
             if marks:
                 pts += w["marks_bonus"]
             pro.append(f"Clothing or marks agree: {', '.join(sorted(shared))}")
+            clues.add("clothing")
         else:
             con.append("Clothing or marks described differently")
     else:
@@ -248,8 +259,20 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
     else:
         unknown.append("age_band")
 
+    nameless = not nf
+    if nameless:
+        # Score over the evidence that can exist: the name weight is left out of the maximum.
+        if f.get("gender") in ("male", "female") and f.get("gender") == s.get("gender"):
+            pts += w["gender_same"]
+            pro.append(f"Same gender: {f['gender']}")
+        pts = pts * 100 / (100 - w["name_max"])
+        if len(clues) < NAMELESS_MIN_CLUES:
+            pts = min(pts, POSSIBLE - 1)  # not enough description to suggest
+        elif not {"clothing", "location"} <= clues:
+            pts = min(pts, STRONG - 1)    # Possible at most
+
     score = int(round(max(0.0, min(100.0, pts))))
-    return {"score": score, "reasons_for": pro, "reasons_against": con, "unknown": unknown}
+    return {"score": score, "reasons_for": pro, "reasons_against": con, "unknown": unknown, "nameless": nameless}
 
 
 def has(r: dict, f: str) -> bool:
@@ -296,6 +319,8 @@ def compute(records: list[dict], events: list[dict]) -> list[dict]:
         for i, (f, ev) in enumerate(cands):
             other = cands[1][0] if i == 0 and len(cands) > 1 else (cands[0][0] if i > 0 else None)
             ambiguous = len(cands) > 1 and i < 2 and cands[0][1]["score"] - cands[1][1]["score"] <= AMBIGUOUS_GAP
+            # Nameless: ask for a physical detail.
+            question = ASK["clothing_marks"] if ev["nameless"] else ask_next(by_id[s["id"]], f, other, ev["unknown"])
             results.append({
                 "id": f"{f['id']}:{s['id']}",
                 "found_id": f["id"],
@@ -306,7 +331,8 @@ def compute(records: list[dict], events: list[dict]) -> list[dict]:
                 "reasons_for": ev["reasons_for"],
                 "reasons_against": ev["reasons_against"],
                 "unknown": [FIELD_LABELS[u] for u in ev["unknown"]],
-                "ask_next": ask_next(by_id[s["id"]], f, other, ev["unknown"]),
+                "ask_next": question,
+                "nameless": ev["nameless"],
             })
     return results
 

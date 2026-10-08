@@ -16,6 +16,7 @@ WEIGHTS = {
     "clothing_max": 15,        # keyword overlap in clothing and marks
     "marks_bonus": 12,         # a shared scar, mole, tattoo...
     "age_same": 5,
+    "gender_same": 3,          # only counted for nameless records, where it is part of the description
 }
 
 NAME_SIM_FLOOR = 0.70      # name similarity below this earns no points
@@ -24,6 +25,9 @@ NAME_RARITY_FLOOR = 0.40   # most common name keeps at least this share of the n
 RELATIVE_SIM_MIN = 0.80
 VILLAGE_SIM_MIN = 85       # rapidfuzz ratio, 0–100
 VILLAGE_CONFLICT_SIM = 60
+
+# Nameless found records: score over the evidence that exists, but ask for more of it.
+NAMELESS_MIN_CLUES = 2     # agreeing clues besides gender and age: location, clothing/marks, relative, village
 
 STRONG = 80
 POSSIBLE = 50

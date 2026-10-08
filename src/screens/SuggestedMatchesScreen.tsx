@@ -66,6 +66,7 @@ export const SuggestedMatchesScreen: React.FC = () => {
                 {statusBadge && <span className={`badge ${statusBadge[1]}`}>{statusBadge[0]}</span>}
               </div>
 
+              {s.nameless && <p className="text-sm font-medium text-pending mb-1">No name recorded – matched on description</p>}
               <ul className="space-y-1">
                 {s.reasons_for.slice(0, 3).map((reason, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-navy">

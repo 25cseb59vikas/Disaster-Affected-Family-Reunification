@@ -101,6 +101,7 @@ export const VerifyDetailsScreen: React.FC = () => {
       relative_relation: relativeRelation.trim() || null,
       clothing_marks: clothingMarks.trim() || null,
       found_where: isFound ? foundWhere.trim() || null : null,
+      last_seen: isFound ? null : foundWhere.trim() || null,
       household_id: null,
       has_missing_family: isFound && hasMissingFamily,
       looking_for:
@@ -209,15 +210,13 @@ export const VerifyDetailsScreen: React.FC = () => {
           />
         </div>
 
-        {registrationType === 'found' && (
-          <TextField
-            id="found-where"
-            label="Where they were found"
-            value={foundWhere}
-            onChange={setFoundWhere}
-            unsure={unsure('found_where')}
-          />
-        )}
+        <TextField
+          id="found-where"
+          label={registrationType === 'found' ? 'Where they were found' : 'Where they were last seen'}
+          value={foundWhere}
+          onChange={setFoundWhere}
+          unsure={registrationType === 'found' && unsure('found_where')}
+        />
 
         <div>
           <input

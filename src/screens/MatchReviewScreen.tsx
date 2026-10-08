@@ -16,7 +16,9 @@ const RecordColumn: React.FC<{ r?: PersonRecord; title: string }> = ({ r, title 
         ['Village', r.village],
         [r.type === 'found' ? `Relative${r.relative_relation ? ` (${r.relative_relation})` : ''}` : `Searching${r.relative_relation ? ` (${r.relative_relation})` : ''}`, r.relative_name],
         ['Clothing, marks', r.clothing_marks],
-        ...(r.type === 'found' ? ([['Found', r.found_where]] as Array<[string, string | null]>) : [])
+        ...(r.type === 'found'
+          ? ([['Found', r.found_where]] as Array<[string, string | null]>)
+          : ([['Last seen', r.last_seen]] as Array<[string, string | null | undefined]>))
       ]
     : [];
   return (
@@ -127,6 +129,10 @@ export const MatchReviewScreen: React.FC = () => {
           <span className={`text-score font-semibold ${s.band === 'Strong' ? 'text-verified' : 'text-pending'}`}>{s.score}</span>
           <span className="text-base font-medium text-navy">{s.ambiguous ? 'Ambiguous: another candidate scores almost the same' : `${s.band} match`}</span>
         </div>
+      )}
+
+      {s?.nameless && (
+        <p className="card mb-3 bg-pending-bg border-pending-border text-base font-medium text-navy">No name recorded – matched on description</p>
       )}
 
       {state.status === 'confirmed' && (

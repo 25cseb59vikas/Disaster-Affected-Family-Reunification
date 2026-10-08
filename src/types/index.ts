@@ -40,6 +40,7 @@ export interface PersonRecord {
   relative_relation: string | null;
   clothing_marks: string | null;
   found_where: string | null;
+  last_seen?: string | null; // seeking only: where the family last saw them
   household_id: string | null;
   has_missing_family: boolean;
   looking_for: LookingFor[];
@@ -80,6 +81,7 @@ export interface Suggestion {
   reasons_against: string[];
   unknown: string[];
   ask_next: string | null;
+  nameless?: boolean; // found record has no name: matched on description only
 }
 
 export interface MetaRow {

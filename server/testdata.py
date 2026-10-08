@@ -94,7 +94,7 @@ def record(kind: str, site: str, **fields) -> dict:
         "created_at": (START + timedelta(minutes=rng.randint(0, 2 * 24 * 60))).isoformat(),
         "registered_by": "TEST DATA", "name": None, "gender": "unknown", "age_band": None, "village": None,
         "relative_name": None, "relative_relation": None, "clothing_marks": None, "found_where": None,
-        "household_id": None, "has_missing_family": False, "looking_for": [], "transcript": None, "photo": None,
+        "household_id": None, "last_seen": None, "has_missing_family": False, "looking_for": [], "transcript": None, "photo": None,
     }
     r.update(fields)
     records.append(r)
@@ -196,6 +196,8 @@ def main() -> None:
         if i < 4:  # a family is searching for four of them
             searcher = rng.choice(MALE)
             s = seeking_record(p, SITES[1 - SITES.index(site)], f"{p['given']} {p['father']}", searcher, "father")
+            if i < 2:  # the family says where they last saw them
+                s["last_seen"] = f["found_where"].split(",")[0]
             truth.append({"found_id": f["id"], "seeking_id": s["id"], "kind": "nameless", "variations": []})
 
     # Decoys: different people sharing the common name and village of the first pair.
