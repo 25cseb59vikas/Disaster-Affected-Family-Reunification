@@ -5,6 +5,7 @@ export type ScreenId =
   | 'verify_details'
   | 'saved'
   | 'notifications'
+  | 'record_detail'
   | 'suggested_matches'
   | 'match_review'
   | 'search_records'
@@ -42,6 +43,8 @@ export interface PersonRecord {
   clothing_marks: string | null;
   found_where: string | null;
   last_seen?: string | null; // seeking only: where the family last saw them
+  contact_phone?: string | null; // seeking only: the searching relative's phone
+  source?: 'app' | 'phone'; // phone = registered through the simulated phone line
   private_detail?: string | null; // found only: for the family check; never shown to searchers or on /status
   household_id: string | null;
   has_missing_family: boolean;

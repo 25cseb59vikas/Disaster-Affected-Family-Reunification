@@ -1,4 +1,4 @@
-import type { MatchEvent, SiteId } from './types';
+import type { MatchEvent, SiteId, Suggestion } from './types';
 import { SITES } from './sites';
 
 /**
@@ -66,4 +66,26 @@ export function familyQuestion(detail: string): string {
   if (/ring|chain|bangle|earring|necklace|anklet|thread|jewel/.test(d)) return 'What jewellery or thread does the person usually wear?';
   if (/tooth|teeth/.test(d)) return "Is there anything noticeable about the person's teeth?";
   return 'Describe something about the person that only the family would know.';
+}
+
+export type SearchStatus = 'Searching' | 'Possible match' | 'Being verified' | 'Found';
+
+/** One status for a record across all its suggested pairs, plus the pair that decides it. */
+export function recordStatus(
+  recordId: string,
+  suggestions: Suggestion[],
+  events: Map<string, MatchEvent[]>
+): { status: SearchStatus; suggestion: Suggestion | null } {
+  const rank: Record<SearchStatus, number> = { Searching: 0, 'Possible match': 1, 'Being verified': 2, Found: 3 };
+  let best: { status: SearchStatus; suggestion: Suggestion | null } = { status: 'Searching', suggestion: null };
+  for (const s of suggestions) {
+    if (s.found_id !== recordId && s.seeking_id !== recordId) continue;
+    const st = pairState(events.get(s.id) ?? []).status;
+    const status: SearchStatus | null =
+      st === 'verified' ? 'Found' : st === 'confirmed' || st === 'partly_confirmed' ? 'Being verified' : st === 'open' ? 'Possible match' : null;
+    if (status && (rank[status] > rank[best.status] || (rank[status] === rank[best.status] && s.score > (best.suggestion?.score ?? -1)))) {
+      best = { status, suggestion: s };
+    }
+  }
+  return best;
 }

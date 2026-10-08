@@ -95,6 +95,8 @@ interface AppContextType {
   addEvent: (kind: MatchEventKind, foundId: string, seekingId: string, reason?: string) => Promise<void>;
   selectedSuggestionId: string | null;
   setSelectedSuggestionId: (id: string | null) => void;
+  selectedRecordId: string | null;
+  setSelectedRecordId: (id: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -109,6 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [voiceDraft, setVoiceDraft] = useState<VoiceDraft>(emptyDraft);
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
 
   const db = siteDb(site);
   const waitingCount = useLiveQuery(() => db.outbox.count(), [db], 0);
@@ -250,7 +253,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         saveNewPerson,
         addEvent,
         selectedSuggestionId,
-        setSelectedSuggestionId
+        setSelectedSuggestionId,
+        selectedRecordId,
+        setSelectedRecordId
       }}
     >
       {children}

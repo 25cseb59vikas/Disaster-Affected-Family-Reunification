@@ -6,6 +6,7 @@ import { RegisterSpeakScreen } from './screens/RegisterSpeakScreen';
 import { VerifyDetailsScreen } from './screens/VerifyDetailsScreen';
 import { SavedScreen } from './screens/SavedScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
+import { RecordDetailScreen } from './screens/RecordDetailScreen';
 import { NotificationToast } from './components/Notifications';
 import { SuggestedMatchesScreen } from './screens/SuggestedMatchesScreen';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
@@ -30,6 +31,8 @@ export const AppContent: React.FC = () => {
         return <SavedScreen />;
       case 'notifications':
         return <NotificationsScreen />;
+      case 'record_detail':
+        return <RecordDetailScreen />;
       case 'suggested_matches':
         return <SuggestedMatchesScreen />;
       case 'match_review':

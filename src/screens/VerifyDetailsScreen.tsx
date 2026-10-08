@@ -68,6 +68,7 @@ export const VerifyDetailsScreen: React.FC = () => {
   const [clothingMarks, setClothingMarks] = useState(voiceDraft.clothingMarks);
   const [foundWhere, setFoundWhere] = useState(voiceDraft.foundWhere);
   const [privateDetail, setPrivateDetail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [lookingFor, setLookingFor] = useState<LookingFor[]>(voiceDraft.lookingFor);
   const [hasMissingFamily, setHasMissingFamily] = useState(voiceDraft.lookingFor.length > 0);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
@@ -104,6 +105,7 @@ export const VerifyDetailsScreen: React.FC = () => {
       found_where: isFound ? foundWhere.trim() || null : null,
       last_seen: isFound ? null : foundWhere.trim() || null,
       private_detail: isFound ? privateDetail.trim() || null : null,
+      contact_phone: isFound ? null : contactPhone.trim() || null,
       household_id: null,
       has_missing_family: isFound && hasMissingFamily,
       looking_for:
@@ -211,6 +213,23 @@ export const VerifyDetailsScreen: React.FC = () => {
             className={`${inputClass(unsure('clothing_or_marks'))} h-auto py-3 resize-none`}
           />
         </div>
+
+        {registrationType === 'seeking' && (
+          <div>
+            <label htmlFor="contact-phone" className="field-label">
+              Contact phone (optional)
+            </label>
+            <input
+              id="contact-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={contactPhone}
+              onChange={e => setContactPhone(e.target.value)}
+              className="input"
+            />
+          </div>
+        )}
 
         <TextField
           id="found-where"
