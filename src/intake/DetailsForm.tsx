@@ -62,6 +62,32 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
   const [lookingFor, setLookingFor] = useState<LookingFor[]>(draft.lookingFor);
   const [hasMissingFamily, setHasMissingFamily] = useState(draft.lookingFor.length > 0);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoLarge, setPhotoLarge] = useState<string | null>(null);
+  const [describing, setDescribing] = useState(false);
+  const [describeNote, setDescribeNote] = useState('');
+  const [clothingFromPhoto, setClothingFromPhoto] = useState(false);
+
+  // Clothing and belongings described by the local vision model; the volunteer checks it (shown as "Please check").
+  const describePhoto = async () => {
+    setDescribing(true);
+    setDescribeNote('');
+    try {
+      const res = await fetch('/api/photo/describe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: photoLarge ?? photo }),
+        signal: AbortSignal.timeout(130000)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { description } = (await res.json()) as { description: string };
+      setClothingMarks(prev => (prev.trim() ? `${prev.trim()}; ${description}` : description));
+      setClothingFromPhoto(true);
+    } catch {
+      setDescribeNote('Describing the photo is not available right now. Please type the clothing.');
+    } finally {
+      setDescribing(false);
+    }
+  };
 
   const updateLookingFor = (i: number, patch: Partial<LookingFor>) =>
     setLookingFor(prev => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
@@ -151,17 +177,32 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
           <TextField id="person-village" label="Village" value={village} onChange={setVillage} unsure={unsure('village')} />
 
           <div>
-            <FieldLabel htmlFor="clothing-marks" label="Clothing or marks" unsure={unsure('clothing_or_marks')} />
+            <FieldLabel htmlFor="clothing-marks" label="Clothing or marks" unsure={unsure('clothing_or_marks') || clothingFromPhoto} />
             <textarea
               id="clothing-marks"
               rows={2}
               value={clothingMarks}
               onChange={e => setClothingMarks(e.target.value)}
-              className={`${inputClass(unsure('clothing_or_marks'))} h-auto py-3 resize-none`}
+              className={`${inputClass(unsure('clothing_or_marks') || clothingFromPhoto)} h-auto py-3 resize-none`}
             />
+            {clothingFromPhoto && <p className="text-sm text-navy-muted mt-1">Described from the photo by the local AI. Check it against the person.</p>}
           </div>
 
-          <PhotoPicker value={photo} onChange={setPhoto} />
+          <PhotoPicker
+            value={photo}
+            onChange={(thumbnail, large) => {
+              setPhoto(thumbnail);
+              setPhotoLarge(large);
+            }}
+          />
+          {photo && (
+            <div className="-mt-2">
+              <button type="button" onClick={describePhoto} disabled={describing} className="btn-text -ml-2 disabled:cursor-wait">
+                {describing ? 'Describing the photo…' : 'Describe clothing from the photo'}
+              </button>
+              {describeNote && <p className="text-sm text-urgent">{describeNote}</p>}
+            </div>
+          )}
         </fieldset>
 
         {/* Family and circumstances. */}

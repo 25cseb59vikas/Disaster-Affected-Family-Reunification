@@ -58,6 +58,12 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
 OLLAMA_TIMEOUT_S = float(os.getenv("OLLAMA_TIMEOUT", "15"))
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "60m")  # keep the model in memory between notes
+# Vision model for describing clothing from a photo (ported from the teammate's backup branch).
+VISION_MODEL = os.getenv("VISION_MODEL", "qwen2.5vl:3b")
+VISION_TIMEOUT_S = float(os.getenv("VISION_TIMEOUT", "120"))
+VISION_PROMPT = ("Describe only clearly visible clothing, colors, bags, and accessories. Do not guess identity, "
+                 "age, gender, health, or other personal attributes. If a detail is unclear, say so. "
+                 "Return a short factual description in one or two sentences.")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://localhost:3000,https://127.0.0.1:3000").split(",")
 
 AGE_BANDS = ["Under 12", "12–18", "19–59", "60+"]
@@ -337,3 +343,25 @@ def voice_extract_text(body: dict = Body(...)):
         fields["age_band"] = band_for_age(ages.pop())
     return {"transcript": transcript, "fields": fields, "unsure": unsure_fields(fields, transcript),
             "llm_ok": llm_ok, "timings": {"stt_ms": 0, "llm_ms": llm_ms}}
+
+
+@app.post("/photo/describe")
+def photo_describe(body: dict = Body(...)):
+    """Clothing and belongings visible in a photo, for the volunteer to check. The photo is not stored."""
+    image = str(body.get("image") or "")
+    if image.startswith("data:"):
+        image = image.split(",", 1)[-1]
+    if not image or len(image) > 7_000_000:  # about 5 MB of JPEG as base64
+        raise HTTPException(422, "Send one JPEG image under 5 MB as base64")
+    try:
+        r = httpx.post(f"{OLLAMA_URL}/api/chat", timeout=VISION_TIMEOUT_S, json={
+            "model": VISION_MODEL, "stream": False, "keep_alive": OLLAMA_KEEP_ALIVE,
+            "options": {"temperature": 0},
+            "messages": [{"role": "user", "content": VISION_PROMPT, "images": [image]}],
+        })
+        r.raise_for_status()
+        description = r.json()["message"]["content"].strip()
+    except (httpx.HTTPError, KeyError, ValueError) as e:
+        log.warning("Photo description failed (%s): %s", VISION_MODEL, e)
+        raise HTTPException(503, f"Photo description unavailable. Is the '{VISION_MODEL}' model pulled in Ollama?") from e
+    return {"description": description, "model": VISION_MODEL}

@@ -1,26 +1,34 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, Upload } from 'lucide-react';
 
-const THUMBNAIL_PX = 240;
+const THUMBNAIL_PX = 240; // stored and synced
+const LARGE_PX = 768; // only sent for a clothing description, never stored
 
-/** Draws an image or video frame at most THUMBNAIL_PX on its long side, as a small JPEG data URL. */
-function toThumbnail(source: CanvasImageSource, width: number, height: number): string {
-  const scale = Math.min(1, THUMBNAIL_PX / Math.max(width, height));
+/** Draws an image or video frame at most `maxPx` on its long side, as a JPEG data URL. */
+function toJpeg(source: CanvasImageSource, width: number, height: number, maxPx = THUMBNAIL_PX): string {
+  const scale = Math.min(1, maxPx / Math.max(width, height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   canvas.getContext('2d')!.drawImage(source, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.7);
+  return canvas.toDataURL('image/jpeg', maxPx === THUMBNAIL_PX ? 0.7 : 0.85);
 }
 
+interface Picked {
+  thumbnail: string;
+  large: string;
+}
+
+const both = (source: CanvasImageSource, w: number, h: number): Picked => ({ thumbnail: toJpeg(source, w, h), large: toJpeg(source, w, h, LARGE_PX) });
+
 // Shrinks a picked image so it fits in IndexedDB and sync payloads.
-function fileThumbnail(file: File): Promise<string> {
+function fileImages(file: File): Promise<Picked> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      resolve(toThumbnail(img, img.width, img.height));
+      resolve(both(img, img.width, img.height));
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -34,7 +42,7 @@ function fileThumbnail(file: File): Promise<string> {
 // Laptops and desktops get the webcam as well as file upload.
 const isTouchDevice = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
-const Webcam: React.FC<{ onCapture: (url: string) => void; onClose: () => void }> = ({ onCapture, onClose }) => {
+const Webcam: React.FC<{ onCapture: (picked: Picked) => void; onClose: () => void }> = ({ onCapture, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
@@ -60,7 +68,7 @@ const Webcam: React.FC<{ onCapture: (url: string) => void; onClose: () => void }
   const capture = () => {
     const v = videoRef.current;
     if (!v || !v.videoWidth) return;
-    onCapture(toThumbnail(v, v.videoWidth, v.videoHeight));
+    onCapture(both(v, v.videoWidth, v.videoHeight));
   };
 
   return (
@@ -92,8 +100,14 @@ const Webcam: React.FC<{ onCapture: (url: string) => void; onClose: () => void }
   );
 };
 
-/** "Add photo": rear camera on phones; webcam or file upload on desktops. */
-export const PhotoPicker: React.FC<{ value: string | null; onChange: (url: string | null) => void }> = ({ value, onChange }) => {
+/**
+ * "Add photo": rear camera on phones; webcam or file upload on desktops.
+ * onChange gets the small stored thumbnail and a larger copy that is only used for a clothing description.
+ */
+export const PhotoPicker: React.FC<{ value: string | null; onChange: (thumbnail: string | null, large: string | null) => void }> = ({
+  value,
+  onChange
+}) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
@@ -105,7 +119,8 @@ export const PhotoPicker: React.FC<{ value: string | null; onChange: (url: strin
     e.target.value = '';
     if (!file) return;
     try {
-      onChange(await fileThumbnail(file));
+      const picked = await fileImages(file);
+      onChange(picked.thumbnail, picked.large);
       setError('');
     } catch {
       setError('That photo could not be read. Please try another.');
@@ -123,8 +138,8 @@ export const PhotoPicker: React.FC<{ value: string | null; onChange: (url: strin
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       {webcamOpen ? (
         <Webcam
-          onCapture={url => {
-            onChange(url);
+          onCapture={picked => {
+            onChange(picked.thumbnail, picked.large);
             setError('');
             setWebcamOpen(false);
           }}
@@ -142,7 +157,7 @@ export const PhotoPicker: React.FC<{ value: string | null; onChange: (url: strin
                 Upload a different file
               </button>
             )}
-            <button type="button" onClick={() => onChange(null)} className="btn-text">
+            <button type="button" onClick={() => onChange(null, null)} className="btn-text">
               Remove photo
             </button>
           </div>
