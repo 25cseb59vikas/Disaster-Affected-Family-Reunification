@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
 import { SITES } from '../sites';
 import type { SiteId } from '../types';
+import { switchRole } from '../role';
 
 export const ChooseSiteScreen: React.FC = () => {
   const { site, volunteerName, chooseSite } = useApp();
@@ -75,6 +76,9 @@ export const ChooseSiteScreen: React.FC = () => {
       />
       {error && <p className="text-sm text-urgent mt-1.5">{error}</p>}
       <p className="text-sm text-navy-muted mt-4">Each site keeps its own records on this device.</p>
+      <button type="button" onClick={switchRole} className="btn-text -ml-2 mt-2">
+        Not a volunteer? Change how you use Reunite
+      </button>
     </Screen>
   );
 };

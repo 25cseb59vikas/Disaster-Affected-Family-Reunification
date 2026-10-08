@@ -7,8 +7,14 @@ export const SITES: Array<{ id: SiteId; name: string; helper: string; codePrefix
 ];
 
 export const PHONE_LINE = { id: 'phone-line' as SiteId, name: 'Phone line', codePrefix: 'P' };
+// The authority console registers at its own desk and can endorse matches, but is not one of the two officer sites.
+export const AUTHORITY = { id: 'authority' as SiteId, name: 'Authority desk', codePrefix: 'D' };
+// Families reporting on their own phone. Push only: this source never downloads other records.
+export const FAMILY_APP = { id: 'family-app' as SiteId, name: 'Family app', codePrefix: 'F' };
 
-export const siteName = (id: string) => (id === PHONE_LINE.id ? PHONE_LINE.name : SITES.find(s => s.id === id)?.name ?? id);
+const OTHER_SOURCES = [PHONE_LINE, AUTHORITY, FAMILY_APP];
+
+export const siteName = (id: string) => SITES.find(s => s.id === id)?.name ?? OTHER_SOURCES.find(s => s.id === id)?.name ?? id;
 
 /** RFC 4122 v4 UUID. crypto.randomUUID needs HTTPS, so build it from getRandomValues (works on plain HTTP too). */
 export function uuid(): string {
@@ -23,7 +29,7 @@ export function uuid(): string {
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export function recordCode(site: SiteId): string {
-  const prefix = site === PHONE_LINE.id ? PHONE_LINE.codePrefix : SITES.find(s => s.id === site)?.codePrefix ?? 'X';
+  const prefix = [...SITES, ...OTHER_SOURCES].find(s => s.id === site)?.codePrefix ?? 'X';
   const r = crypto.getRandomValues(new Uint8Array(4));
   return `${prefix}-${[...r].map(x => CODE_CHARS[x % CODE_CHARS.length]).join('')}`;
 }

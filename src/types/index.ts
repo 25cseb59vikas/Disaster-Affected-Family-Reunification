@@ -11,7 +11,9 @@ export type ScreenId =
   | 'search_records'
   | 'priority_cases';
 
-export type SiteId = 'camp-a' | 'hospital-b' | 'phone-line'; // phone-line: simulated phone registrations, not an officer site
+// Officer sites: camp-a, hospital-b. The others register records but never count as a site confirmation:
+// phone-line (simulated phone registrations), authority (the console's desk), family-app (families on their own phone).
+export type SiteId = 'camp-a' | 'hospital-b' | 'phone-line' | 'authority' | 'family-app';
 export type RecordType = 'found' | 'seeking';
 export type Gender = 'male' | 'female' | 'other' | 'unknown';
 export type AgeBand = 'Under 12' | '12–18' | '19–59' | '60+';
@@ -44,7 +46,7 @@ export interface PersonRecord {
   found_where: string | null;
   last_seen?: string | null; // seeking only: where the family last saw them
   contact_phone?: string | null; // seeking only: the searching relative's phone
-  source?: 'app' | 'phone'; // phone = registered through the simulated phone line
+  source?: 'app' | 'phone' | 'family'; // phone = the simulated phone line; family = the family app
   private_detail?: string | null; // found only: for the family check; never shown to searchers or on /status
   household_id: string | null;
   has_missing_family: boolean;
