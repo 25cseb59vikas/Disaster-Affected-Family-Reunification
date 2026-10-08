@@ -32,7 +32,7 @@ export const ConsoleRegisterPage: React.FC = () => {
     return (
       <>
         <h1 className="screen-title">Register at the authority desk</h1>
-        <div className="grid gap-3 md:grid-cols-2 max-w-3xl">
+        <div className="grid gap-3 md:grid-cols-2 max-w-3xl [&>*]:min-w-0">
           {(
             [
               ['found', UserPlus, 'Person found here', 'Someone who has arrived at this desk'],

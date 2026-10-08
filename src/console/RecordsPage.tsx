@@ -77,10 +77,10 @@ export const RecordsPage: React.FC = () => {
         {rows.length} of {data?.records.length ?? 0} records
       </p>
 
-      <div className="hidden md:block card p-0 overflow-hidden">
+      <div className="hidden md:block card p-0">
         <table className="w-full text-sm text-left table-fixed">
-          <thead className="bg-pressed text-navy-muted">
-            <tr>
+          <thead className="text-navy-muted">
+            <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-pressed [&>th]:py-2.5 [&>th:first-child]:rounded-tl-card [&>th:last-child]:rounded-tr-card">
               <th className="w-14 px-3 py-2 font-medium">
                 <span className="sr-only">Photo</span>
               </th>
@@ -90,7 +90,7 @@ export const RecordsPage: React.FC = () => {
               <th className="w-32 px-3 py-2 font-medium">Site</th>
               <th className="hidden xl:table-cell w-24 px-3 py-2 font-medium">Age</th>
               <th className="hidden lg:table-cell px-3 py-2 font-medium">Village</th>
-              <th className="w-36 px-3 py-2 font-medium">Status</th>
+              <th className="w-40 px-3 py-2 font-medium">Status</th>
               <th className="hidden xl:table-cell w-28 px-3 py-2 font-medium">Registered</th>
             </tr>
           </thead>
@@ -111,7 +111,7 @@ export const RecordsPage: React.FC = () => {
                 <td className="hidden xl:table-cell px-3 py-2 text-navy">{r.age_band ?? '–'}</td>
                 <td className="hidden lg:table-cell px-3 py-2 text-navy truncate">{r.village ?? '–'}</td>
                 <td className="px-3 py-2">
-                  <span className={`badge text-xs ${STATUS_BADGE[st]}`}>{statusLabel(r, st)}</span>
+                  <span className={`badge ${STATUS_BADGE[st]}`}>{statusLabel(r, st)}</span>
                 </td>
                 <td className="hidden xl:table-cell px-3 py-2 text-navy-muted">{timeSince(r.created_at)}</td>
               </tr>
@@ -128,7 +128,7 @@ export const RecordsPage: React.FC = () => {
             <span className="flex-1 min-w-0">
               <span className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <span className="min-w-0 flex-1 text-lg font-semibold text-navy truncate">{r.name ?? 'Name not known'}</span>
-                <span className={`badge text-xs ${STATUS_BADGE[st]}`}>{statusLabel(r, st)}</span>
+                <span className={`badge ${STATUS_BADGE[st]}`}>{statusLabel(r, st)}</span>
               </span>
               <span className="block text-sm text-navy-muted truncate">
                 {r.type === 'found' ? 'Found' : 'Search'} · {siteName(r.site)} · {r.code}

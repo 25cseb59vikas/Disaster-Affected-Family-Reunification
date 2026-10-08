@@ -181,7 +181,7 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
       </aside>
 
       <div className="min-h-dvh flex flex-col">
-        <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 lg:px-8 py-6">{page}</main>
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 lg:px-8 py-6 lg:py-8">{page}</main>
         <DemoNotice />
       </div>
     </div>

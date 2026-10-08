@@ -25,6 +25,12 @@
   textarea {
     touch-action: manipulation;
   }
+
+  /* Keyboard focus is always visible (inputs draw their own ring). */
+  :focus-visible {
+    outline: 2px solid theme('colors.civilBlue.DEFAULT');
+    outline-offset: 2px;
+  }
 }
 
 /* Shared building blocks. Every value comes from tailwind.config.js. */
@@ -44,7 +50,8 @@
   .btn-primary {
     @apply w-full h-12 rounded-button bg-terracotta text-white text-base font-semibold
       flex items-center justify-center gap-2 transition-colors cursor-pointer
-      hover:bg-terracotta-hover active:bg-terracotta-active disabled:opacity-60 disabled:cursor-wait;
+      hover:bg-terracotta-hover active:bg-terracotta-active disabled:opacity-60 disabled:cursor-wait
+      lg:w-auto lg:min-w-[120px] lg:px-6;
   }
 
   /* Pinned footer actions: full width on phones, a right-aligned button on desktop. */
@@ -53,7 +60,7 @@
   }
 
   .screen-footer .btn-primary {
-    @apply lg:w-auto lg:min-w-[240px] lg:px-8;
+    @apply lg:min-w-[200px] lg:px-8;
   }
 
   .btn-text {

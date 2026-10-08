@@ -165,7 +165,7 @@ export const OverviewPage: React.FC = () => {
                   ROWS.map(site => {
                     const c = countsFor(data, site.id);
                     return (
-                      <tr key={site.id} className="border-t border-borderSlate">
+                      <tr key={site.id} className="border-t border-borderSlate hover:bg-canvas">
                         <td className="px-3 py-2.5 font-medium text-navy">{site.name}</td>
                         <td className="px-2 py-2.5 text-right">{c.registered}</td>
                         <td className="px-2 py-2.5 text-right">{c.searching}</td>

@@ -5,6 +5,9 @@ import { Screen } from '../components/Screen';
 import { siteName } from '../sites';
 import { eventsByPair, recordStatus, type SearchStatus } from '../matchStatus';
 import type { PersonRecord } from '../types';
+import { useIsDesktop } from '../useIsDesktop';
+import { DesktopList } from '../components/DesktopList';
+import { RecordSummary } from './RecordDetailScreen';
 
 type View = 'here' | 'searches';
 
@@ -24,7 +27,7 @@ export const timeSince = (iso: string) => {
 };
 
 export const SearchRecordsScreen: React.FC = () => {
-  const { db, site, navigateTo, setSelectedRecordId } = useApp();
+  const { db, site, navigateTo, selectedRecordId, setSelectedRecordId } = useApp();
   const [view, setView] = useState<View>('here');
   const [query, setQuery] = useState('');
   const data = useLiveQuery(async () => {
@@ -45,38 +48,100 @@ export const SearchRecordsScreen: React.FC = () => {
     navigateTo('record_detail');
   };
 
+  // Tabs and the search box: the same on every screen size.
+  const controls = (
+    <>
+        <div role="tablist" aria-label="Show" className="grid grid-cols-2 p-1 mb-3 rounded-button bg-pressed md:max-w-md">
+          {(
+            [
+              ['here', 'People here'],
+              ['searches', 'Searches']
+            ] as Array<[View, string]>
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+              className={`min-h-[44px] rounded-badge text-base font-medium ${view === v ? 'bg-surface text-navy shadow-subtle' : 'text-navy-muted'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <input
+          type="search"
+          aria-label={view === 'here' ? 'Search people here' : 'Search the searches'}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={view === 'here' ? 'Name, village or code' : 'Name, relative, phone or code'}
+          className="input mb-4 md:max-w-xl"
+        />
+    </>
+  );
+
+  const desktop = useIsDesktop();
+  if (desktop) {
+    const selected = shown.find(r => r.id === selectedRecordId)?.id ?? shown[0]?.id;
+    const here = view === 'here';
+    return (
+      <Screen nav="search" width="wide">
+        <h1 className="screen-title">Search</h1>
+        {controls}
+        <DesktopList
+          empty={data && shown.length === 0 ? (pool.length === 0 ? (here ? 'Nobody registered here yet.' : 'No searches yet.') : `Nothing matches "${query}".`) : null}
+          head={here ? ['', 'Person', 'Code', 'Status'] : ['Missing person', 'Registered', 'Status']}
+          cols={here ? 'grid-cols-[48px_minmax(0,1fr)_88px_auto]' : 'grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]'}
+          rows={shown.map(r => {
+            const { status } = recordStatus(r.id, data!.suggestions, data!.events);
+            const badge = <span key="status" className={`badge ${STATUS_BADGE[status]}`}>{here && status === 'Searching' ? 'No match yet' : status}</span>;
+            return {
+              key: r.id,
+              selected: r.id === selected,
+              onSelect: () => setSelectedRecordId(r.id),
+              label: `${r.name ?? 'Name not known'}, ${r.code}`,
+              cells: here
+                ? [
+                    <span key="photo" className="w-12 h-12 rounded-button bg-pressed flex items-center justify-center text-lg font-semibold text-navy-muted overflow-hidden">
+                      {r.photo ? <img src={r.photo} alt="" className="w-full h-full object-cover" /> : (r.name?.charAt(0) ?? '?')}
+                    </span>,
+                    <span key="person" className="min-w-0">
+                      <span className="block truncate text-base font-semibold text-navy">{r.name ?? 'Name not known'}</span>
+                      <span className="block truncate text-sm text-navy-muted">{[r.age_band, r.village].filter(Boolean).join(' · ') || 'No age or village'}</span>
+                    </span>,
+                    <span key="code" className="text-sm text-navy tracking-wide">{r.code}</span>,
+                    badge
+                  ]
+                : [
+                    <span key="person" className="min-w-0">
+                      <span className="block truncate text-base font-semibold text-navy">{r.name ?? 'Name not known'}</span>
+                      <span className="block truncate text-sm text-navy">
+                        Searching: {r.relative_name ?? 'not recorded'}
+                        {r.relative_relation ? ` (${r.relative_relation})` : ''}
+                        {r.contact_phone ? ` · ${r.contact_phone}` : ''}
+                      </span>
+                    </span>,
+                    <span key="where" className="min-w-0 text-sm text-navy-muted">
+                      <span className="block truncate">{r.source === 'phone' ? 'Phone line' : siteName(r.site)} · {r.code}</span>
+                      <span className="block truncate">{timeSince(r.created_at)}</span>
+                    </span>,
+                    badge
+                  ]
+            };
+          })}
+          panel={selected ? <RecordSummary key={selected} id={selected} /> : null}
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen nav="search" width="wide">
       <h1 className="screen-title">Search</h1>
 
-      <div role="tablist" aria-label="Show" className="grid grid-cols-2 p-1 mb-3 rounded-button bg-pressed md:max-w-md">
-        {(
-          [
-            ['here', 'People here'],
-            ['searches', 'Searches']
-          ] as Array<[View, string]>
-        ).map(([v, label]) => (
-          <button
-            key={v}
-            type="button"
-            role="tab"
-            aria-selected={view === v}
-            onClick={() => setView(v)}
-            className={`min-h-[44px] rounded-badge text-base font-medium ${view === v ? 'bg-surface text-navy shadow-subtle' : 'text-navy-muted'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <input
-        type="search"
-        aria-label={view === 'here' ? 'Search people here' : 'Search the searches'}
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        placeholder={view === 'here' ? 'Name, village or code' : 'Name, relative, phone or code'}
-        className="input mb-4 md:max-w-xl"
-      />
+      {controls}
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {shown.map(r => {

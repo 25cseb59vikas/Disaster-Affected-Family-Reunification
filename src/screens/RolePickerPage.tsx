@@ -14,20 +14,20 @@ const CHOICES: Array<{ role: Role; Icon: LucideIcon; title: string; helper: stri
 export const RolePickerPage: React.FC = () => (
   <div className="min-h-dvh bg-canvas flex flex-col">
     <header className="bg-header text-white">
-      <div className="mx-auto max-w-4xl px-4 py-5">
+      <div className="mx-auto max-w-5xl px-4 lg:px-8 py-5">
         <p className="text-xl font-semibold">Reunite</p>
         <p className="text-sm text-white/70">Family reunification after a disaster, working offline first</p>
       </div>
     </header>
-    <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6">
+    <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6 lg:px-8 lg:flex lg:flex-col lg:justify-center lg:pb-24">
       <h1 className="screen-title">How are you using Reunite?</h1>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3 [&>*]:min-w-0">
         {CHOICES.map(({ role, Icon, title, helper }) => (
           <button
             key={role}
             type="button"
             onClick={() => chooseRole(role)}
-            className="card w-full min-h-[72px] flex items-center md:flex-col md:items-start gap-3 text-left cursor-pointer transition-colors hover:border-navy/30 active:bg-pressed"
+            className="card w-full min-h-[72px] flex items-center md:flex-col md:items-start gap-3 lg:p-6 lg:gap-4 text-left cursor-pointer transition-colors hover:border-navy/30 active:bg-pressed"
           >
             <span className="w-10 h-10 shrink-0 rounded-full bg-terracotta-soft text-terracotta flex items-center justify-center">
               <Icon className="icon" />

@@ -91,3 +91,67 @@ export const RecordDetailScreen: React.FC = () => {
     </Screen>
   );
 };
+
+/** Desktop panel beside the Search and Priority lists: one record's status, code and details. */
+export const RecordSummary: React.FC<{ id: string }> = ({ id }) => {
+  const { db, navigateTo, setSelectedSuggestionId } = useApp();
+  const data = useLiveQuery(async () => {
+    const [r, suggestions, events] = await Promise.all([db.records.get(id), db.suggestions.toArray(), db.events.toArray()]);
+    return r ? { r, ...recordStatus(r.id, suggestions, eventsByPair(events)) } : null;
+  }, [db, id]);
+  if (!data) return data === null ? <p className="card text-base text-navy-muted">Record not found.</p> : null;
+
+  const { r, status, suggestion } = data;
+  const seeking = r.type === 'seeking';
+  const rows: Array<[string, string | null | undefined]> = [
+    ['Age', r.age_band],
+    ['Gender', r.gender === 'unknown' ? null : r.gender],
+    ['Village', r.village],
+    [seeking ? 'Searching' : 'Relative', r.relative_name ? `${r.relative_name}${r.relative_relation ? ` (${r.relative_relation})` : ''}` : null],
+    ...(seeking ? ([['Contact phone', r.contact_phone]] as Array<[string, string | null | undefined]>) : []),
+    ['Clothing, marks', r.clothing_marks],
+    [seeking ? 'Last seen' : 'Found', seeking ? r.last_seen : r.found_where],
+    ['Registered', `${r.source === 'phone' ? 'Phone line' : siteName(r.site)} · ${timeSince(r.created_at)}`]
+  ];
+
+  return (
+    <article aria-label="Record" className="space-y-3">
+      <div className="flex items-center gap-3">
+        {r.photo && <img src={r.photo} alt="" className="w-16 h-16 rounded-button object-cover border border-borderSlate" />}
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold text-navy break-words">{r.name ?? 'Name not known'}</h2>
+          <p className="text-sm text-navy-muted">
+            Code <span className="font-semibold text-navy tracking-wide">{r.code}</span>
+          </p>
+        </div>
+      </div>
+      <div className="card">
+        <p className="text-sm text-navy-muted">{seeking ? 'Search status' : 'Status'}</p>
+        <p className="text-lg font-semibold text-navy">{!seeking && status === 'Searching' ? 'No match yet' : status}</p>
+        {suggestion && <p className="text-sm text-navy-muted">Best match score {suggestion.score}</p>}
+      </div>
+      <dl className="card grid grid-cols-2 gap-x-4 gap-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="min-w-0">
+            <dt className="text-xs text-navy-muted">{label}</dt>
+            <dd className={`text-base break-words first-letter:uppercase ${value ? 'text-navy' : 'text-navy-muted italic'}`}>{value || 'Not recorded'}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="flex justify-end">
+        {suggestion && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => {
+              setSelectedSuggestionId(suggestion.id);
+              navigateTo('match_review');
+            }}
+          >
+            Open the match
+          </button>
+        )}
+      </div>
+    </article>
+  );
+};

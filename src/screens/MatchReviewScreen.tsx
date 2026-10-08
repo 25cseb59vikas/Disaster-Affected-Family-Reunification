@@ -6,11 +6,13 @@ import { Screen } from '../components/Screen';
 import { AUTHORITY, SITES, siteName } from '../sites';
 import { familyQuestion, pairState } from '../matchStatus';
 import type { PersonRecord } from '../types';
+import { useIsDesktop } from '../useIsDesktop';
+import { MatchEvidenceDesktop } from './MatchEvidenceDesktop';
 
-const NAMELESS_LABEL = 'No name recorded – matched on description';
+export const NAMELESS_LABEL = 'No name recorded – matched on description';
 
 /** One record's public fields. The private detail is never listed; the place found shows only once verified. */
-const RecordColumn: React.FC<{ r?: PersonRecord; title: string; showPlace: boolean }> = ({ r, title, showPlace }) => {
+export const RecordColumn: React.FC<{ r?: PersonRecord; title: string; showPlace: boolean }> = ({ r, title, showPlace }) => {
   const relation = r?.relative_relation ? ` (${r.relative_relation})` : '';
   const rows: Array<[string, string | null | undefined]> = r
     ? [
@@ -124,6 +126,20 @@ export const MatchReviewScreen: React.FC = () => {
     },
     [db, selectedSuggestionId]
   );
+  const desktop = useIsDesktop();
+
+  if (desktop) {
+    return (
+      <Screen showBack nav="matches" width="wide">
+        <h1 className="screen-title">Evidence</h1>
+        {selectedSuggestionId ? (
+          <MatchEvidenceDesktop key={selectedSuggestionId} id={selectedSuggestionId} variant="page" />
+        ) : (
+          <p className="text-base text-navy-muted">No match selected.</p>
+        )}
+      </Screen>
+    );
+  }
 
   if (!data) {
     return (

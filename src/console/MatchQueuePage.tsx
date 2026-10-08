@@ -89,16 +89,14 @@ export const MatchQueuePage: React.FC = () => {
       </div>
 
       {/* Table from tablet width; cards on phones so nothing scrolls sideways. */}
-      <div className="hidden md:block card p-0 overflow-hidden">
+      <div className="hidden md:block card p-0">
         <table className="w-full text-sm text-left table-fixed">
-          <thead className="bg-pressed text-navy-muted">
-            <tr>
-              <th className="w-16 px-3 py-2 font-medium">Score</th>
-              <th className="w-20 px-3 py-2 font-medium">Band</th>
-              <th className="px-3 py-2 font-medium">Found person</th>
-              <th className="px-3 py-2 font-medium">Searched for</th>
-              <th className="w-28 px-3 py-2 font-medium">Sites</th>
-              <th className="w-36 px-3 py-2 font-medium">Status</th>
+          <thead className="text-navy-muted">
+            <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-pressed [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-medium">
+              <th className="w-20 rounded-tl-card">Score</th>
+              <th>Found person</th>
+              <th>Searched for</th>
+              <th className="w-44 rounded-tr-card">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -111,22 +109,30 @@ export const MatchQueuePage: React.FC = () => {
                 <tr
                   key={s.id}
                   onClick={() => select(s.id)}
-                  className={`border-t border-borderSlate cursor-pointer ${on ? 'bg-terracotta-soft' : 'hover:bg-canvas'}`}
+                  className={`border-t border-borderSlate cursor-pointer align-top ${on ? 'bg-terracotta-soft' : 'hover:bg-canvas'}`}
                 >
                   <td className="px-3 py-2.5">
-                    <button type="button" onClick={() => select(s.id)} aria-pressed={on} className={`text-lg font-semibold ${s.band === 'Strong' ? 'text-verified' : 'text-pending'}`}>
+                    <button
+                      type="button"
+                      onClick={() => select(s.id)}
+                      aria-pressed={on}
+                      aria-label={`Score ${s.score < 0 ? 'none' : s.score}, open evidence`}
+                      className={`block text-lg font-semibold leading-tight rounded-badge ${s.band === 'Strong' ? 'text-verified' : 'text-pending'}`}
+                    >
                       {s.score < 0 ? '–' : s.score}
                     </button>
+                    <span className="block text-xs text-navy-muted">{s.score < 0 ? 'Not suggested' : s.ambiguous ? 'Ambiguous' : s.band}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-navy">{s.score < 0 ? '–' : s.ambiguous ? 'Ambiguous' : s.band}</td>
-                  <td className="px-3 py-2.5 text-navy truncate">{personLabel(f)}</td>
-                  <td className="px-3 py-2.5 text-navy truncate">{personLabel(k)}</td>
-                  <td className="px-3 py-2 text-xs text-navy-muted leading-tight">
-                    <span className="block truncate">{siteName(f?.site ?? '')} →</span>
-                    <span className="block truncate">{siteName(k?.site ?? '')}</span>
+                  <td className="px-3 py-2.5 min-w-0">
+                    <span className="block truncate text-base text-navy">{personLabel(f)}</span>
+                    <span className="block truncate text-xs text-navy-muted">{siteName(f?.site ?? '')}</span>
+                  </td>
+                  <td className="px-3 py-2.5 min-w-0">
+                    <span className="block truncate text-base text-navy">{personLabel(k)}</span>
+                    <span className="block truncate text-xs text-navy-muted">{siteName(k?.site ?? '')}</span>
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className={`badge text-xs ${st[1]}`}>{st[0]}</span>
+                    <span className={`badge ${st[1]}`}>{st[0]}</span>
                   </td>
                 </tr>
               );
@@ -146,7 +152,7 @@ export const MatchQueuePage: React.FC = () => {
               <span className="flex flex-wrap items-baseline gap-2">
                 <span className={`text-xl font-semibold ${s.band === 'Strong' ? 'text-verified' : 'text-pending'}`}>{s.score < 0 ? '–' : s.score}</span>
                 <span className="text-sm text-navy">{s.score < 0 ? 'No longer suggested' : s.ambiguous ? 'Ambiguous' : `${s.band} match`}</span>
-                <span className={`badge text-xs ${st[1]}`}>{st[0]}</span>
+                <span className={`badge text-sm ${st[1]}`}>{st[0]}</span>
               </span>
               <span className="block text-base font-semibold text-navy truncate mt-1">
                 {personLabel(f)} ↔ {personLabel(k)}
@@ -166,7 +172,7 @@ export const MatchQueuePage: React.FC = () => {
     <>
       <h1 className="screen-title">Match queue</h1>
       <Notice />
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_520px] lg:gap-6 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:gap-6 lg:items-start">
         {/* On phones and tablets the selected match replaces the list. */}
         <div className={selected ? 'hidden lg:block' : ''}>{queue}</div>
         {selected ? (

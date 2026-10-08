@@ -1,7 +1,10 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import type { ScreenId } from '../types';
-import { UserPlus, Search, Users, AlertTriangle, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Bell, Search, UserPlus, Users, type LucideIcon } from 'lucide-react';
+import { siteName } from '../sites';
+import { SwitchMenu } from './SwitchMenu';
+import { InstallButton } from './InstallButton';
 import { useUnseenCount } from './Notifications';
 
 export type NavTab = 'register' | 'search' | 'matches' | 'priority';
@@ -51,35 +54,57 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
   );
 };
 
-/** The same four destinations as a left-hand column, from 1024px wide. */
-export const SideNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
-  const { navigateTo } = useApp();
+/**
+ * Desktop (1024px and up): the product name, the same destinations with icons and labels,
+ * notifications, then the site, the volunteer and the Switch menu at the bottom.
+ */
+export const AppSidebar: React.FC<{ activeTab?: NavTab | 'notifications' }> = ({ activeTab }) => {
+  const { navigateTo, site, volunteerName } = useApp();
   const unseen = useUnseenCount();
+  const items: Array<{ id: NavTab | 'notifications'; target: ScreenId; label: string; Icon: LucideIcon }> = [
+    ...navItems,
+    { id: 'notifications', target: 'notifications', label: 'Notifications', Icon: Bell }
+  ];
 
   return (
-    <nav aria-label="Main" className="hidden lg:flex flex-none w-56 flex-col gap-1 p-3 bg-surface border-r border-borderSlate overflow-y-auto">
-      {navItems.map(({ id, target, label, Icon }) => {
-        const isActive = activeTab === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => navigateTo(target)}
-            aria-current={isActive ? 'page' : undefined}
-            className={`min-h-[44px] px-3 rounded-button flex items-center gap-3 text-base text-left ${
-              isActive ? 'bg-terracotta-soft text-terracotta font-semibold' : 'text-navy-muted font-medium hover:bg-pressed hover:text-navy'
-            }`}
-          >
-            <Icon className="icon" />
-            <span className="flex-1">{label}</span>
-            {id === 'matches' && unseen > 0 && (
-              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-urgent text-white text-xs font-semibold leading-5 text-center">
-                {unseen > 99 ? '99+' : unseen}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
+    <aside className="hidden lg:flex flex-none w-60 flex-col bg-header text-white">
+      <div className="px-5 pt-5 pb-4">
+        <p className="text-lg font-semibold">Reunite</p>
+        <p className="text-xs text-white/70">Field app</p>
+      </div>
+      <nav aria-label="Main" className="px-3 flex flex-col gap-1">
+        {items.map(({ id, target, label, Icon }) => {
+          const isActive = activeTab === id;
+          const count = id === 'notifications' ? unseen : 0;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => navigateTo(target)}
+              aria-current={isActive ? 'page' : undefined}
+              className={`min-h-[44px] px-3 rounded-button flex items-center gap-3 text-base text-left ${
+                isActive ? 'bg-white/15 text-white font-semibold' : 'text-white/80 font-medium hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Icon className="icon" />
+              <span className="flex-1">{label}</span>
+              {count > 0 && (
+                <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-terracotta text-white text-xs font-semibold leading-[22px] text-center">
+                  {count > 99 ? '99+' : count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+      <div className="mt-auto px-3 py-4 border-t border-white/10">
+        <div className="px-2 mb-1">
+          <p className="text-base font-semibold truncate">{siteName(site)}</p>
+          <p className="text-sm text-white/70 truncate">{volunteerName}</p>
+        </div>
+        <SwitchMenu placement="above" />
+        <InstallButton tone="dark" className="mt-2" />
+      </div>
+    </aside>
   );
 };

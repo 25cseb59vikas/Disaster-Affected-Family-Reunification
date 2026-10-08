@@ -14,7 +14,7 @@ export const ConsolePriorityPage: React.FC = () => {
     <>
       <h1 className="screen-title">Priority cases</h1>
       <p className="text-sm text-navy-muted -mt-2 mb-4">Children with no family located, people with no name, and matches waiting for a confirmation, across all sites.</p>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {result?.cases.map(c => {
           const r = data!.records.find(x => c.key.endsWith(x.id));
           const href = c.suggestionId ? `/console/matches?pair=${encodeURIComponent(c.suggestionId)}` : r ? `/console/records/${r.id}` : null;

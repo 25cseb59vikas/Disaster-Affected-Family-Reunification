@@ -6,6 +6,10 @@ import { Screen } from '../components/Screen';
 import { SITES, siteName } from '../sites';
 import { eventsByPair, pairState } from '../matchStatus';
 import type { PersonRecord, SiteId, Suggestion } from '../types';
+import { useIsDesktop } from '../useIsDesktop';
+import { DesktopList } from '../components/DesktopList';
+import { MatchEvidenceDesktop } from './MatchEvidenceDesktop';
+import { RecordSummary } from './RecordDetailScreen';
 
 export interface Case {
   key: string;
@@ -16,6 +20,7 @@ export interface Case {
   detail: string;
   created_at: string;
   suggestionId?: string;
+  recordId?: string; // the record the case is about
 }
 
 // Simple rules, most urgent first. Each case says why it is on the list.
@@ -38,10 +43,10 @@ export function buildCases(site: SiteId | null, records: PersonRecord[], suggest
     const detail = [r.age_band, r.clothing_marks].filter(Boolean).join(' · ') || r.code;
     if (r.age_band === 'Under 12') {
       cases.push({ key: `child-${r.id}`, rank: 0, title: r.name ?? 'Child, name not known', reason: 'Child, no family located yet',
-        reasonColor: 'text-urgent', detail, created_at: r.created_at, suggestionId: bestFor.get(r.id)?.id });
+        reasonColor: 'text-urgent', detail, created_at: r.created_at, suggestionId: bestFor.get(r.id)?.id, recordId: r.id });
     } else if (!r.name) {
       cases.push({ key: `noname-${r.id}`, rank: 1, title: `Person ${r.code}`, reason: 'No name recorded',
-        reasonColor: 'text-pending', detail, created_at: r.created_at, suggestionId: bestFor.get(r.id)?.id });
+        reasonColor: 'text-pending', detail, created_at: r.created_at, suggestionId: bestFor.get(r.id)?.id, recordId: r.id });
     }
   }
   for (const s of suggestions) {
@@ -66,7 +71,8 @@ export function buildCases(site: SiteId | null, records: PersonRecord[], suggest
       reasonColor: 'text-civilBlue',
       detail: `Match score ${s.score}`,
       created_at: f?.created_at ?? '',
-      suggestionId: s.id
+      suggestionId: s.id,
+      recordId: f?.id
     });
   }
   cases.sort((a, b) => a.rank - b.rank || a.created_at.localeCompare(b.created_at));
@@ -75,6 +81,8 @@ export function buildCases(site: SiteId | null, records: PersonRecord[], suggest
 
 export const PriorityCasesScreen: React.FC = () => {
   const { db, site, navigateTo, setSelectedSuggestionId } = useApp();
+  const desktop = useIsDesktop();
+  const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const data = useLiveQuery(async () => {
     const [records, suggestions, events] = await Promise.all([db.records.toArray(), db.suggestions.toArray(), db.events.toArray()]);
     return { records, ...buildCases(site, records, suggestions, eventsByPair(events)) };
@@ -88,20 +96,67 @@ export const PriorityCasesScreen: React.FC = () => {
       ]
     : [];
 
+  const countsCard = (
+    <>
+        {data && (
+          <div className="card grid grid-cols-3 divide-x divide-borderSlate text-center mb-3 lg:max-w-2xl">
+            {counts.map(c => (
+              <div key={c.label} className="min-w-0 px-1">
+                <span className={`block text-xl font-semibold ${c.color}`}>{c.value}</span>
+                <span className="block text-xs text-navy-muted truncate">{c.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+    </>
+  );
+
+  if (desktop) {
+    const cases = data?.cases ?? [];
+    const sel = cases.find(c => c.key === selectedKey) ?? cases[0];
+    return (
+      <Screen nav="priority" width="wide">
+        <h1 className="screen-title">Priority</h1>
+        {countsCard}
+        <DesktopList
+          empty={data && cases.length === 0 ? 'Nothing urgent right now.' : null}
+          head={['Case', 'Why it is here']}
+          cols="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]"
+          rows={cases.map(c => ({
+            key: c.key,
+            selected: c.key === sel?.key,
+            onSelect: () => setSelectedKey(c.key),
+            label: `${c.title}: ${c.reason}`,
+            cells: [
+              <span key="case" className="min-w-0">
+                <span className="block truncate text-base font-semibold text-navy">{c.title}</span>
+                <span className="block truncate text-sm text-navy-muted">{c.detail}</span>
+              </span>,
+              <span key="why" className={`text-sm font-medium ${c.reasonColor}`}>
+                {c.reason}
+              </span>
+            ]
+          }))}
+          panel={
+            sel?.suggestionId ? (
+              <MatchEvidenceDesktop key={sel.suggestionId} id={sel.suggestionId} variant="panel" />
+            ) : sel?.recordId ? (
+              <>
+                <p className="text-sm text-navy-muted mb-2">No match suggested yet for this person.</p>
+                <RecordSummary key={sel.recordId} id={sel.recordId} />
+              </>
+            ) : null
+          }
+        />
+      </Screen>
+    );
+  }
+
   return (
     <Screen nav="priority" width="wide">
       <h1 className="screen-title">Priority</h1>
 
-      {data && (
-        <div className="card grid grid-cols-3 divide-x divide-borderSlate text-center mb-3 lg:max-w-2xl">
-          {counts.map(c => (
-            <div key={c.label} className="min-w-0 px-1">
-              <span className={`block text-xl font-semibold ${c.color}`}>{c.value}</span>
-              <span className="block text-xs text-navy-muted truncate">{c.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {countsCard}
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {data?.cases.map(c => {

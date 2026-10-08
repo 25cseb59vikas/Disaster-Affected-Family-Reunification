@@ -109,7 +109,7 @@ export const IntakeChooser: React.FC<{ type: RecordType; onDone: (draft: VoiceDr
         type="button"
         onClick={() => onDone(emptyDraft)}
         disabled={!idle}
-        className={`${option} mt-1 min-h-[44px] text-civilBlue hover:underline lg:no-underline lg:text-navy ${idle ? '' : 'max-lg:hidden'} lg:mt-0`}
+        className={`${option} mt-1 min-h-[44px] text-civilBlue max-lg:hover:underline lg:text-navy ${idle ? '' : 'max-lg:hidden'} lg:mt-0`}
       >
         <Keyboard className="hidden lg:block w-8 h-8 mb-2 text-terracotta" strokeWidth={1.75} />
         <span className="lg:text-lg lg:font-semibold">Type instead</span>
