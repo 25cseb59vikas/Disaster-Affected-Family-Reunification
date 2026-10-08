@@ -1,12 +1,14 @@
 {
-  "name": "disaster-family-reunification-app",
+  "name": "reunite",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:http": "vite --mode http",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:http": "vite preview --mode http"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.5",

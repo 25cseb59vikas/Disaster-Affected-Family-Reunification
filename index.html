@@ -11,7 +11,9 @@
     <meta name="theme-color" content="#0F1B2D" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Reunite Relief" />
+    <meta name="apple-mobile-web-app-title" content="Reunite" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="description" content="Family reunification after a disaster, working offline first." />
 
   </head>
   <body>
@@ -20,9 +22,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('ServiceWorker registered with scope: ', reg.scope))
-            .catch(err => console.log('ServiceWorker registration failed: ', err));
+          // Fails on the self-signed HTTPS dev server (certificate not trusted); use npm run dev:http to test offline.
+          navigator.serviceWorker.register('/sw.js').catch(err => console.warn('Service worker not registered:', err.message));
         });
       }
     </script>

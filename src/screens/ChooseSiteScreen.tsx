@@ -4,6 +4,7 @@ import { Screen } from '../components/Screen';
 import { SITES } from '../sites';
 import type { SiteId } from '../types';
 import { switchRole } from '../role';
+import { InstallButton } from '../components/InstallButton';
 
 export const ChooseSiteScreen: React.FC = () => {
   const { site, volunteerName, chooseSite } = useApp();
@@ -79,6 +80,7 @@ export const ChooseSiteScreen: React.FC = () => {
       <button type="button" onClick={switchRole} className="btn-text -ml-2 mt-2">
         Not a volunteer? Change how you use Reunite
       </button>
+      <InstallButton className="mt-2" />
     </Screen>
   );
 };
