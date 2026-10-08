@@ -5,3 +5,4 @@ httpx==0.28.1
 numpy==2.5.3
 python-multipart==0.0.32
 uvicorn==0.54.0
+RapidFuzz==3.14.6

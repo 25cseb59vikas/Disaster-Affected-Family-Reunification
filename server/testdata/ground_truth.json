@@ -1,0 +1,296 @@
+{
+ "pairs": [
+  {
+   "found_id": "3cbf46a4-397c-4689-9d56-2e72661cb8a7",
+   "seeking_id": "4a499058-dcd3-4f16-9226-972e8d8cde5c",
+   "kind": "pair",
+   "variations": [
+    "initial",
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "0163eeb6-ce45-4a07-85c8-14ec15ad6df5",
+   "seeking_id": "120dba8c-06f9-4d5f-8c09-8a476d9ca847",
+   "kind": "pair",
+   "variations": [
+    "initial"
+   ]
+  },
+  {
+   "found_id": "bb8604dc-4486-4aec-8c1b-cf0e772593d5",
+   "seeking_id": "441f5488-1979-41f7-8e64-6cafadffaa63",
+   "kind": "pair",
+   "variations": [
+    "swapped"
+   ]
+  },
+  {
+   "found_id": "25b93e5d-35cb-478c-92f1-3bcdfae67aa9",
+   "seeking_id": "4e97a3ea-3586-47b6-b880-808227f985b4",
+   "kind": "pair",
+   "variations": [
+    "age",
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "773addbe-447a-4e4a-95a5-d214b37883eb",
+   "seeking_id": "53eb005e-9bbc-42bf-b67f-77343e3e9c8b",
+   "kind": "pair",
+   "variations": [
+    "initial",
+    "missing_village"
+   ]
+  },
+  {
+   "found_id": "4e7b7b19-cb82-4d69-9620-55f865c31823",
+   "seeking_id": "cda2f0bc-1641-45e9-af60-6db3752c8b25",
+   "kind": "pair",
+   "variations": [
+    "missing_clothing"
+   ]
+  },
+  {
+   "found_id": "88b7421b-8801-4e9e-af79-9fc5998b2ca1",
+   "seeking_id": "51efc235-5410-4114-bb97-12aae77afbeb",
+   "kind": "pair",
+   "variations": [
+    "missing_relative"
+   ]
+  },
+  {
+   "found_id": "3485ee8f-26a0-406c-a328-6a1a7e29b2b1",
+   "seeking_id": "cb3ff832-1b99-4e7a-9373-2e6fb99b3061",
+   "kind": "pair",
+   "variations": [
+    "village_spelling"
+   ]
+  },
+  {
+   "found_id": "0d7121fb-81ca-4cce-b99e-a81e0d6fa7b1",
+   "seeking_id": "8aa063e9-cb09-4196-b213-c7e7673bc2b8",
+   "kind": "pair",
+   "variations": [
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "788d4b51-d93c-439f-9517-3d2d9503e8f3",
+   "seeking_id": "b76484be-aac2-41d4-85d9-da68fc5748c5",
+   "kind": "pair",
+   "variations": [
+    "initial",
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "5243ad51-b767-4fe5-95f4-1e1a19b2678e",
+   "seeking_id": "48d55805-e74f-4b4e-8c62-6e796952702d",
+   "kind": "pair",
+   "variations": [
+    "missing_relative",
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "ab83b35c-df0d-41e8-ab75-f0dc8561a6ed",
+   "seeking_id": "530e49a0-90dc-4bd1-9a8b-e1bd7a3d6937",
+   "kind": "pair",
+   "variations": [
+    "initial"
+   ]
+  },
+  {
+   "found_id": "2133530d-d1d0-4546-986d-d0e78ca23721",
+   "seeking_id": "0eee732b-bfe2-44f0-8cf4-d3ce7944776e",
+   "kind": "pair",
+   "variations": [
+    "swapped"
+   ]
+  },
+  {
+   "found_id": "5aa218e8-925b-4d8e-a46e-79ed85431393",
+   "seeking_id": "a8b8f200-b4cb-4efa-87b2-fc89c08963d9",
+   "kind": "pair",
+   "variations": [
+    "age"
+   ]
+  },
+  {
+   "found_id": "f7707df0-f579-438f-b743-62830cf44494",
+   "seeking_id": "a456cec7-4655-44d9-81f4-bbb99cfca383",
+   "kind": "pair",
+   "variations": [
+    "missing_village",
+    "swapped"
+   ]
+  },
+  {
+   "found_id": "55c074a1-886f-4e2a-a68e-51fa6c3e4f3e",
+   "seeking_id": "d8285016-4982-4e00-af31-276d17e27e43",
+   "kind": "pair",
+   "variations": [
+    "missing_clothing"
+   ]
+  },
+  {
+   "found_id": "7f004ad2-8bcd-48d2-affe-5a16f870defb",
+   "seeking_id": "79eaacd8-cbf7-4acd-913d-90dafd930cf9",
+   "kind": "pair",
+   "variations": [
+    "missing_relative"
+   ]
+  },
+  {
+   "found_id": "89674cff-d115-4f37-9878-1bd341386258",
+   "seeking_id": "ecd74755-7b20-4a61-b4d7-60c97fc8a13f",
+   "kind": "pair",
+   "variations": [
+    "village_spelling"
+   ]
+  },
+  {
+   "found_id": "3a63d47f-f554-4573-b6fd-5111bb8b131c",
+   "seeking_id": "12ef98b8-5967-4185-96ea-4eecbe8d258f",
+   "kind": "pair",
+   "variations": [
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "6ce87a71-18a5-47ab-90db-e6d610d72e80",
+   "seeking_id": "68f34505-3160-4ed5-9557-690cdaf8c0f9",
+   "kind": "pair",
+   "variations": [
+    "initial"
+   ]
+  },
+  {
+   "found_id": "9b33daf7-c08d-456c-b800-f05945a80135",
+   "seeking_id": "20595f02-3f68-49dc-9102-d040f002c9cf",
+   "kind": "pair",
+   "variations": [
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "8c4d6c36-6b9f-4f31-88b8-f5f4247ab231",
+   "seeking_id": "25110b68-79e4-45ca-aa86-42b6463e3ffe",
+   "kind": "pair",
+   "variations": [
+    "initial"
+   ]
+  },
+  {
+   "found_id": "8b803d4a-8b08-4a38-881a-2492f173d246",
+   "seeking_id": "d2702442-fe57-4ee0-be2e-e9766010a5af",
+   "kind": "pair",
+   "variations": [
+    "age",
+    "swapped"
+   ]
+  },
+  {
+   "found_id": "da961f4f-bedb-42c7-89ce-41011cd37929",
+   "seeking_id": "620b0f74-0561-4dd7-b005-808c1060f878",
+   "kind": "pair",
+   "variations": [
+    "age"
+   ]
+  },
+  {
+   "found_id": "c26d1bba-ff46-44f4-a713-4da99ee72b0f",
+   "seeking_id": "95128724-3edf-42cb-b869-06c8f3c3f876",
+   "kind": "household",
+   "variations": [
+    "initial",
+    "missing_village"
+   ]
+  },
+  {
+   "found_id": "03082625-7f9a-4b8b-8dbc-7512362381fd",
+   "seeking_id": "bdbcccdd-ba52-4029-8948-5ee46175a154",
+   "kind": "household",
+   "variations": [
+    "missing_clothing"
+   ]
+  },
+  {
+   "found_id": "346590e8-0ad2-44f3-91ca-43a1147f211d",
+   "seeking_id": "692f3fbd-9f02-4833-aa85-92480ec8a0d5",
+   "kind": "household",
+   "variations": [
+    "missing_relative"
+   ]
+  },
+  {
+   "found_id": "7fd489d9-3c4a-49d7-be31-1c25bc3c773a",
+   "seeking_id": "084a7b4c-5c38-46b7-8b53-16fa448074b0",
+   "kind": "household",
+   "variations": [
+    "village_spelling"
+   ]
+  },
+  {
+   "found_id": "2c13068b-3d41-4006-859d-b3f51802dd52",
+   "seeking_id": "0a919e6e-7277-4de8-b0a1-132e623d3956",
+   "kind": "household",
+   "variations": [
+    "initial",
+    "spelling"
+   ]
+  },
+  {
+   "found_id": "68cca95e-a695-47e1-8c55-980067c04ad3",
+   "seeking_id": "4020e90e-3320-42b3-8e31-2a781a118e00",
+   "kind": "household",
+   "variations": [
+    "spelling",
+    "village_spelling"
+   ]
+  },
+  {
+   "found_id": "cdd0f28c-c46b-461a-bd65-022fccae270d",
+   "seeking_id": "7192ab5b-0fcd-4d10-b135-c668f48145e7",
+   "kind": "household",
+   "variations": [
+    "initial"
+   ]
+  },
+  {
+   "found_id": "342efb4e-4d75-4b87-ac44-679912fb22a3",
+   "seeking_id": "b1f110f4-11d1-4b02-b623-a84cd9455332",
+   "kind": "nameless",
+   "variations": []
+  },
+  {
+   "found_id": "4610e607-8382-4ff8-93b3-99ee8eb83956",
+   "seeking_id": "b271cf9e-34bd-4893-9769-9dc964642fda",
+   "kind": "nameless",
+   "variations": []
+  },
+  {
+   "found_id": "1f8ef89c-d946-4609-b19f-0dd22f18018a",
+   "seeking_id": "5b327c27-1d76-4695-8194-34ce2bdc6cb7",
+   "kind": "nameless",
+   "variations": []
+  },
+  {
+   "found_id": "cb63729d-ffa2-4871-9a98-52ab34b65254",
+   "seeking_id": "50ab999b-2b95-4bbc-bf50-d15e0ebbc8bf",
+   "kind": "nameless",
+   "variations": []
+  }
+ ],
+ "decoys": [
+  "f4292b6b-10a4-4381-b2f1-f623d99bcd09",
+  "660d8ba4-20dd-4216-94ae-2cfb8a09ad74",
+  "385ecb7a-69cc-4f7f-8a99-c8fe8c4c19b7",
+  "4cbd80e9-68a6-456a-9c36-56daba77673e",
+  "d3e82d18-bfbd-44a5-84f7-aa27a53959ea",
+  "be4c2520-0f6d-4f78-a5b8-59fe49d2e1c4",
+  "0aa40d5e-e468-496d-b2f4-a9ae9a4115dd",
+  "1885e3fc-35ba-4615-8bee-b49a25c03fd5"
+ ]
+}
