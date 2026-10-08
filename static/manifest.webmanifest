@@ -1,0 +1,10 @@
+{
+  "name": "REUNITE AI — Disaster Family Reunification Command",
+  "short_name": "REUNITE AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b132b",
+  "theme_color": "#0b132b",
+  "description": "Offline-first humanitarian family reunification command center with local AI normalization and simulated SATCOM mesh.",
+  "icons": []
+}
