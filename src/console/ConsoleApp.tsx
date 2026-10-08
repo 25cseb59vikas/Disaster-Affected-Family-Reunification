@@ -76,7 +76,7 @@ const OfficerName: React.FC<{ initial: string; onDone: (name: string) => void; o
             </button>
           )}
           <button type="button" onClick={switchRole} className="btn-text -ml-2">
-            Change how you use Reunite
+            Change role
           </button>
         </div>
       </main>
@@ -173,7 +173,7 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
               Change name
             </button>
             <button type="button" onClick={switchRole} className="text-white/90 hover:underline min-h-[32px]">
-              Change how you use Reunite
+              Change role
             </button>
           </div>
           <InstallButton tone="dark" />

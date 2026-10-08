@@ -7,7 +7,7 @@ import { PhoneLinePage } from './screens/PhoneLinePage';
 import { RolePickerPage } from './screens/RolePickerPage';
 import { ConsoleApp } from './console/ConsoleApp';
 import { FamilyApp } from './family/FamilyApp';
-import { ROLE_HOME, storedRole } from './role';
+import { deviceRole, ROLE_HOME } from './role';
 import './components/InstallButton'; // starts listening for the browser's install prompt
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
@@ -22,9 +22,7 @@ function Root() {
   if (path.startsWith('/console')) return <ConsoleApp />;
   if (path.startsWith('/family')) return <FamilyApp />;
 
-  // A device already set up as a volunteer site before roles existed stays a volunteer device.
-  let role = storedRole();
-  if (!role && hasStoredSite()) role = 'volunteer';
+  const role = deviceRole();
   if (!role) return <RolePickerPage />;
   if (role !== 'volunteer') {
     location.replace(ROLE_HOME[role]);
@@ -35,14 +33,6 @@ function Root() {
       <AppContent />
     </AppProvider>
   );
-}
-
-function hasStoredSite() {
-  try {
-    return localStorage.getItem('reunite.site') !== null;
-  } catch {
-    return false;
-  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

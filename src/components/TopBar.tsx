@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { useUnseenCount } from './Notifications';
 import { siteName } from '../sites';
+import { SwitchMenu } from './SwitchMenu';
 
 interface TopBarProps {
   showBack?: boolean;
@@ -49,13 +50,9 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
           <Bell className="icon" />
           {unseen > 0 && <span aria-hidden className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-urgent ring-2 ring-header" />}
         </button>
-        <button
-          type="button"
-          onClick={() => navigateTo('choose_site')}
-          className="shrink-0 min-h-[44px] px-3 text-sm font-medium text-white/90 hover:text-white rounded-button hover:bg-white/10"
-        >
-          Switch
-        </button>
+        <div className="shrink-0">
+          <SwitchMenu />
+        </div>
       </div>
 
       <div className="h-status bg-surface border-b border-borderSlate pl-4 pr-2 flex items-center gap-2 text-xs whitespace-nowrap">

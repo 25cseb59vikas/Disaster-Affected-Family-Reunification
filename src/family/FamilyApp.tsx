@@ -56,7 +56,7 @@ export const FamilyApp: React.FC = () => {
       <main className="flex-1 w-full max-w-app mx-auto px-4 py-4">{page}</main>
       <div className="w-full max-w-app mx-auto px-4 pb-2 flex flex-wrap items-center gap-x-3">
         <button type="button" onClick={switchRole} className="btn-text -ml-2 text-sm">
-          Change how you use Reunite
+          Change role
         </button>
         <InstallButton />
       </div>
