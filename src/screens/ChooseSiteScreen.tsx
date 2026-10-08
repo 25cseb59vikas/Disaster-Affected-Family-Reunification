@@ -23,6 +23,7 @@ export const ChooseSiteScreen: React.FC = () => {
   return (
     <Screen
       header={false}
+      width="narrow"
       footer={
         <button type="button" onClick={handleContinue} className="btn-primary">
           Continue
@@ -31,7 +32,7 @@ export const ChooseSiteScreen: React.FC = () => {
     >
       <h1 className="screen-title pt-4">Where are you working?</h1>
 
-      <div className="card-stack mb-6" role="radiogroup" aria-label="Site">
+      <div className="grid gap-3 md:grid-cols-2 mb-6 [&>*]:min-w-0" role="radiogroup" aria-label="Site">
         {SITES.map(s => {
           const isOn = selected === s.id;
           return (

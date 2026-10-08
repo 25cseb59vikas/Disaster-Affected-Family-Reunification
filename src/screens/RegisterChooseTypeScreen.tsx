@@ -36,9 +36,9 @@ export const RegisterChooseTypeScreen: React.FC = () => {
   };
 
   return (
-    <Screen nav="register">
+    <Screen nav="register" width="wide">
       <h1 className="screen-title">Register</h1>
-      <div className="card-stack">
+      <div className="grid gap-3 md:grid-cols-2 lg:max-w-4xl [&>*]:min-w-0">
         <ChoiceCard
           Icon={UserPlus}
           title="Person found here"

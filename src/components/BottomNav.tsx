@@ -18,7 +18,7 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
   const unseen = useUnseenCount();
 
   return (
-    <nav aria-label="Main" className="flex-none bg-surface border-t border-borderSlate pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Main" className="lg:hidden flex-none bg-surface border-t border-borderSlate pb-[env(safe-area-inset-bottom)]">
       <div className="h-nav grid grid-cols-4">
         {navItems.map(({ id, target, label, Icon }) => {
           const isActive = activeTab === id;
@@ -47,6 +47,39 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
           );
         })}
       </div>
+    </nav>
+  );
+};
+
+/** The same four destinations as a left-hand column, from 1024px wide. */
+export const SideNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
+  const { navigateTo } = useApp();
+  const unseen = useUnseenCount();
+
+  return (
+    <nav aria-label="Main" className="hidden lg:flex flex-none w-56 flex-col gap-1 p-3 bg-surface border-r border-borderSlate overflow-y-auto">
+      {navItems.map(({ id, target, label, Icon }) => {
+        const isActive = activeTab === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => navigateTo(target)}
+            aria-current={isActive ? 'page' : undefined}
+            className={`min-h-[44px] px-3 rounded-button flex items-center gap-3 text-base text-left ${
+              isActive ? 'bg-terracotta-soft text-terracotta font-semibold' : 'text-navy-muted font-medium hover:bg-pressed hover:text-navy'
+            }`}
+          >
+            <Icon className="icon" />
+            <span className="flex-1">{label}</span>
+            {id === 'matches' && unseen > 0 && (
+              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-urgent text-white text-xs font-semibold leading-5 text-center">
+                {unseen > 99 ? '99+' : unseen}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 };

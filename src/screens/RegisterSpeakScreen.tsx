@@ -8,7 +8,7 @@ export const RegisterSpeakScreen: React.FC = () => {
   const title = registrationType === 'found' ? 'Person found here' : 'Looking for someone';
 
   return (
-    <Screen showBack>
+    <Screen showBack width="wide">
       <h1 className="screen-title">{title}</h1>
       <VoiceCapture
         type={registrationType}

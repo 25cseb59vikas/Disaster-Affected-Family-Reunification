@@ -18,6 +18,7 @@ export const VerifyDetailsScreen: React.FC = () => {
   return (
     <Screen
       showBack
+      width="wide"
       footer={
         <button type="submit" form="details-form" id="saveButton" disabled={isSaving} className="btn-primary">
           {isSaving ? 'Saving…' : 'Save'}

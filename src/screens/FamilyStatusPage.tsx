@@ -60,6 +60,7 @@ export const FamilyStatusPage: React.FC = () => {
   return (
     <Screen
       header={false}
+      width="narrow"
       footer={
         <button type="button" onClick={() => check()} disabled={loading} className="btn-primary">
           {loading ? 'Checking…' : 'Check status'}

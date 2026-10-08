@@ -44,10 +44,10 @@ export const SuggestedMatchesScreen: React.FC = () => {
     .sort((a, b) => b.s.score - a.s.score);
 
   return (
-    <Screen nav="matches">
+    <Screen nav="matches" width="wide">
       <h1 className="screen-title">Matches</h1>
 
-      <div className="card-stack">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {items.map(({ s, state }) => {
           const strong = s.band === 'Strong';
           const statusBadge = STATUS_BADGE[state.status];
@@ -85,7 +85,7 @@ export const SuggestedMatchesScreen: React.FC = () => {
           );
         })}
 
-        {data && items.length === 0 && <p className="card text-center text-base text-navy-muted">No matches yet</p>}
+        {data && items.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-full">No matches yet</p>}
       </div>
     </Screen>
   );

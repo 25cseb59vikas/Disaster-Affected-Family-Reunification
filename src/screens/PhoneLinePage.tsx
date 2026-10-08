@@ -281,7 +281,7 @@ export const PhoneLinePage: React.FC = () => {
   const inCall = phase !== 'idle' && phase !== 'ended' && phase !== 'error';
 
   return (
-    <Screen header={false}>
+    <Screen header={false} width="narrow">
       <p className="-mx-4 -mt-4 mb-4 px-4 py-2 bg-pending-bg border-b border-pending-border text-sm font-semibold text-navy text-center">
         Simulated call – demo. No real phone call or SMS is made.
       </p>

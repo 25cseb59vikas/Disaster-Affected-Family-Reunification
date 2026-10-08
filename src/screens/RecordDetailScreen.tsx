@@ -42,6 +42,7 @@ export const RecordDetailScreen: React.FC = () => {
     <Screen
       showBack
       nav="search"
+      width="wide"
       footer={
         suggestion ? (
           <button
@@ -59,30 +60,34 @@ export const RecordDetailScreen: React.FC = () => {
     >
       <h1 className="screen-title">{r.name ?? 'Name not known'}</h1>
 
-      <div className="card mb-3">
-        <p className="text-sm text-navy-muted">{seeking ? 'Search status' : 'Status'}</p>
-        <p className="text-lg font-semibold text-navy">{!seeking && status === 'Searching' ? 'No match yet' : status}</p>
-        {suggestion && <p className="text-sm text-navy-muted">Best match score {suggestion.score}</p>}
-      </div>
-
-      <div className="card mb-3">
-        <p className="text-sm text-navy-muted">Record code</p>
-        <p className="text-xl font-semibold text-navy tracking-wide">{r.code}</p>
-        <p className="text-sm text-navy-muted mt-1">The family can check progress with this code at</p>
-        <a href={statusUrl} target="_blank" rel="noreferrer" className="btn-text -ml-2 break-all">
-          {location.host}
-          {statusUrl}
-        </a>
-      </div>
-
-      <dl className="card space-y-2">
-        {rows.map(([label, value]) => (
-          <div key={label} className="min-w-0">
-            <dt className="text-xs text-navy-muted">{label}</dt>
-            <dd className={`text-base break-words first-letter:uppercase ${value ? 'text-navy' : 'text-navy-muted italic'}`}>{value || 'Not recorded'}</dd>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+        <div>
+          <div className="card mb-3">
+            <p className="text-sm text-navy-muted">{seeking ? 'Search status' : 'Status'}</p>
+            <p className="text-lg font-semibold text-navy">{!seeking && status === 'Searching' ? 'No match yet' : status}</p>
+            {suggestion && <p className="text-sm text-navy-muted">Best match score {suggestion.score}</p>}
           </div>
-        ))}
-      </dl>
+
+          <div className="card mb-3">
+            <p className="text-sm text-navy-muted">Record code</p>
+            <p className="text-xl font-semibold text-navy tracking-wide">{r.code}</p>
+            <p className="text-sm text-navy-muted mt-1">The family can check progress with this code at</p>
+            <a href={statusUrl} target="_blank" rel="noreferrer" className="btn-text -ml-2 break-all">
+              {location.host}
+              {statusUrl}
+            </a>
+          </div>
+        </div>
+
+        <dl className="card space-y-2">
+          {rows.map(([label, value]) => (
+            <div key={label} className="min-w-0">
+              <dt className="text-xs text-navy-muted">{label}</dt>
+              <dd className={`text-base break-words first-letter:uppercase ${value ? 'text-navy' : 'text-navy-muted italic'}`}>{value || 'Not recorded'}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </Screen>
   );
 };

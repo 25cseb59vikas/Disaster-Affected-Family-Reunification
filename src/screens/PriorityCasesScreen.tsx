@@ -89,11 +89,11 @@ export const PriorityCasesScreen: React.FC = () => {
     : [];
 
   return (
-    <Screen nav="priority">
+    <Screen nav="priority" width="wide">
       <h1 className="screen-title">Priority</h1>
 
       {data && (
-        <div className="card grid grid-cols-3 divide-x divide-borderSlate text-center mb-3">
+        <div className="card grid grid-cols-3 divide-x divide-borderSlate text-center mb-3 lg:max-w-2xl">
           {counts.map(c => (
             <div key={c.label} className="min-w-0 px-1">
               <span className={`block text-xl font-semibold ${c.color}`}>{c.value}</span>
@@ -103,7 +103,7 @@ export const PriorityCasesScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="card-stack">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {data?.cases.map(c => {
           const body = (
             <>
@@ -133,7 +133,7 @@ export const PriorityCasesScreen: React.FC = () => {
             </div>
           );
         })}
-        {data && data.cases.length === 0 && <p className="card text-center text-base text-navy-muted">Nothing urgent right now.</p>}
+        {data && data.cases.length === 0 && <p className="card text-center text-base text-navy-muted md:col-span-full">Nothing urgent right now.</p>}
       </div>
     </Screen>
   );

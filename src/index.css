@@ -47,6 +47,15 @@
       hover:bg-terracotta-hover active:bg-terracotta-active disabled:opacity-60 disabled:cursor-wait;
   }
 
+  /* Pinned footer actions: full width on phones, a right-aligned button on desktop. */
+  .screen-footer {
+    @apply lg:flex lg:justify-end;
+  }
+
+  .screen-footer .btn-primary {
+    @apply lg:w-auto lg:min-w-[240px] lg:px-8;
+  }
+
   .btn-text {
     @apply min-h-[44px] inline-flex items-center justify-center px-2 text-base font-medium text-civilBlue
       hover:underline cursor-pointer;

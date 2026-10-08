@@ -46,10 +46,10 @@ export const SearchRecordsScreen: React.FC = () => {
   };
 
   return (
-    <Screen nav="search">
+    <Screen nav="search" width="wide">
       <h1 className="screen-title">Search</h1>
 
-      <div role="tablist" aria-label="Show" className="grid grid-cols-2 p-1 mb-3 rounded-button bg-pressed">
+      <div role="tablist" aria-label="Show" className="grid grid-cols-2 p-1 mb-3 rounded-button bg-pressed md:max-w-md">
         {(
           [
             ['here', 'People here'],
@@ -75,10 +75,10 @@ export const SearchRecordsScreen: React.FC = () => {
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder={view === 'here' ? 'Name, village or code' : 'Name, relative, phone or code'}
-        className="input mb-4"
+        className="input mb-4 md:max-w-xl"
       />
 
-      <div className="card-stack">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {shown.map(r => {
           const { status } = recordStatus(r.id, data!.suggestions, data!.events);
           return (
@@ -122,7 +122,7 @@ export const SearchRecordsScreen: React.FC = () => {
         })}
 
         {data && shown.length === 0 && (
-          <p className="card text-center text-base text-navy-muted">
+          <p className="card text-center text-base text-navy-muted md:col-span-full">
             {pool.length === 0 ? (view === 'here' ? 'Nobody registered here yet.' : 'No searches yet.') : `Nothing matches "${query}".`}
           </p>
         )}
