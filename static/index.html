@@ -1,904 +1,127 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b132b">
-  <meta name="description" content="Offline-first disaster-affected family reunification command center powered by offline AI, IndexedDB, and simulated SATCOM inter-camp mesh.">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="stylesheet" href="/styles.css?v=3">
-  <title>REUNITE AI — Disaster Family Reunification Command</title>
-</head>
-<body>
-
-  <!-- ======================================================================
-       STICKY COMMAND HEADER & TELEMETRY STRIP
-       ====================================================================== -->
-  <header class="command-header">
-    <div class="command-header-top">
-      <div class="brand-group">
-        <div class="brand-emblem" aria-hidden="true">
-          <!-- Tactical Emblem SVG -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-            <path d="M2 17l10 5 10-5"></path>
-            <path d="M2 12l10 5 10-5"></path>
-          </svg>
-        </div>
-        <div class="brand-title-wrap">
-          <h1>
-            REUNITE AI 
-            <span class="brand-badge">DISASTER DESK</span>
-          </h1>
-          <div class="brand-subtitle">Autonomous Offline-First Family Reunification &amp; SATCOM Mesh</div>
-        </div>
-      </div>
-
-      <!-- Real-Time Telemetry Badges -->
-      <div class="telemetry-strip">
-        <div class="telemetry-pill" id="headerNetPill" title="Device Connectivity">
-          <span class="pulse-dot" id="headerNetDot"></span>
-          <span id="headerNetText">Online</span>
-        </div>
-
-        <div class="telemetry-pill satcom" id="headerSatPill" title="Simulated Geostationary Satellite Uplink">
-          <span class="pulse-dot violet"></span>
-          <span>🛰️ SATLINK: L-Band Active (35,786 km)</span>
-        </div>
-
-        <div class="telemetry-pill storage" title="Local IndexedDB Vault">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-          <span>Vault: <span id="vaultRecordCount">0</span> Local Records</span>
-        </div>
-
-        <button type="button" class="audio-toggle-btn" id="audioToggleBtn" title="Toggle Tactical Audio Feedback">
-          <span id="audioIcon">🔊</span>
-          <span id="audioText">Audio</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Disaster Operations Metrics Ribbon -->
-    <div class="metrics-ribbon">
-      <div class="metric-card">
-        <div class="metric-icon blue">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Total Registry</span>
-          <span class="metric-value" id="metricTotal">0</span>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon amber">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Missing Reports</span>
-          <span class="metric-value" id="metricMissing">0</span>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon green">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Survivors Located</span>
-          <span class="metric-value" id="metricSurvivors">0</span>
-        </div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-icon purple">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </div>
-        <div class="metric-content">
-          <span class="metric-label">Cross-Center Matches</span>
-          <span class="metric-value" id="metricMatches">0</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Navigation Deck Tabs -->
-    <nav class="nav-deck" aria-label="Command Navigation">
-      <button type="button" class="nav-tab active" data-tab="tab-intake">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-        <span>1. Intake &amp; AI Registration</span>
-      </button>
-
-      <button type="button" class="nav-tab" data-tab="tab-matches">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <span>2. Match Hub &amp; Verification</span>
-        <span class="tab-badge" id="navMatchCount">0</span>
-      </button>
-
-      <button type="button" class="nav-tab" data-tab="tab-database">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-        <span>3. Local Offline Database</span>
-        <span class="tab-badge" id="navLocalCount">0</span>
-      </button>
-
-      <button type="button" class="nav-tab" data-tab="tab-satcom">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
-        <span>4. SATCOM Uplink &amp; Telemetry</span>
-      </button>
-
-      <button type="button" class="nav-tab" data-tab="tab-protocol">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-        <span>5. Field Protocol</span>
-      </button>
-    </nav>
-  </header>
-
-  <!-- ======================================================================
-       MAIN CONTENT CONTAINER
-       ====================================================================== -->
-  <main>
-    <!-- Network Banner (Preserves #status ID for backward compatibility) -->
-    <div class="status-banner" id="status">Checking network status…</div>
-
-    <!-- ====================================================================
-         HERO SECTION: "HELPING FAMILIES RECONNECT" ANIMATED VISUAL
-         ==================================================================== -->
-    <section class="reunite-hero-card" id="reuniteHeroCard" aria-label="Helping Families Reconnect Visual Narrative">
-      <div class="reunite-hero-header">
-        <div class="reunite-hero-title-group">
-          <h2>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            <span>HELPING FAMILIES RECONNECT</span>
-            <span class="reunite-hero-tag">FIELD REUNIFICATION</span>
-          </h2>
-          <div class="reunite-hero-sub">
-            Continuous visual pipeline: From disaster separation across relief centers to verified human reunification.
-          </div>
-        </div>
-
-        <!-- Stage Scrubber & Controller -->
-        <div class="reunite-stage-nav" id="stageNav">
-          <button type="button" class="stage-pill-btn active" data-stage="1">1. Separated (Parents &amp; Child)</button>
-          <button type="button" class="stage-pill-btn" data-stage="2">2. Missing Child Inquiry</button>
-          <button type="button" class="stage-pill-btn" data-stage="3">3. Simulated SATCOM Link</button>
-          <button type="button" class="stage-pill-btn" data-stage="4">4. Match Found</button>
-          <button type="button" class="stage-pill-btn" data-stage="5">5. Officer Verified</button>
-          <button type="button" class="stage-pill-btn" data-stage="6">6. Family Embraced</button>
-          <button type="button" class="stage-ctrl-btn" id="btnToggleAnimPlay" title="Toggle Auto-Play Loop">
-            <span id="animPlayIcon">⏸</span> <span id="animPlayText">Auto</span>
-          </button>
-          <button type="button" class="stage-ctrl-btn" id="btnReplayAnim" title="Replay Reunion Animation" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #a7f3d0; font-weight: 700;">
-            <span>▶ Replay</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Animated SVG Canvas: Father & Mother Reuniting with Child -->
-      <div class="reunite-canvas-wrap">
-        <svg class="reunite-stage-svg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet" id="reuniteStageSvg">
-          <defs>
-            <radialGradient id="stageGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#0284c7" stop-opacity="0.25" />
-              <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
-            </radialGradient>
-            <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3" />
-              <stop offset="50%" stop-color="#0284c7" stop-opacity="0.9" />
-              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.3" />
-            </linearGradient>
-            <linearGradient id="linkGradGreen" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
-              <stop offset="50%" stop-color="#059669" stop-opacity="1" />
-              <stop offset="100%" stop-color="#10b981" stop-opacity="0.4" />
-            </linearGradient>
-            
-            <!-- Father Gradient (Deep Hero Blue) -->
-            <linearGradient id="personGradFather" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#38bdf8" />
-              <stop offset="100%" stop-color="#0369a1" />
-            </linearGradient>
-            <!-- Mother Gradient (Elegant Royal Indigo) -->
-            <linearGradient id="personGradMother" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#818cf8" />
-              <stop offset="100%" stop-color="#3730a3" />
-            </linearGradient>
-            <!-- Child Gradient (Warm Amber / Sun Yellow) -->
-            <linearGradient id="personGradChild" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#fbbf24" />
-              <stop offset="100%" stop-color="#b45309" />
-            </linearGradient>
-            <!-- Reunited Safe Emerald Gradient -->
-            <linearGradient id="personReunitedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#34d399" />
-              <stop offset="100%" stop-color="#059669" />
-            </linearGradient>
-
-            <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <!-- Ambient Glow Background -->
-          <circle cx="460" cy="180" r="260" fill="url(#stageGlow)" />
-          
-          <!-- Ground Horizon Line -->
-          <line x1="70" y1="262" x2="850" y2="262" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="4 6" />
-
-          <!-- Center A Location Node (Left: Sector North Shelter) -->
-          <g id="nodeCenterA" class="stage-node-item" transform="translate(190, 85)">
-            <circle r="22" fill="#13234d" stroke="#38bdf8" stroke-width="2" />
-            <path d="M-7 3 L0 -4 L7 3 M-4 3 L-4 7 L4 7 L4 3" stroke="#38bdf8" stroke-width="1.8" fill="none" />
-            <text y="38" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="700">Center A (Camp 1)</text>
-            <text y="50" text-anchor="middle" fill="#38bdf8" font-size="9.5">Parents Registered</text>
-            <line x1="0" y1="24" x2="0" y2="80" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.6" />
-          </g>
-
-          <!-- Center B Location Node (Right: Coastal Relief Base) -->
-          <g id="nodeCenterB" class="stage-node-item" transform="translate(735, 85)">
-            <circle r="22" fill="#13234d" stroke="#38bdf8" stroke-width="2" />
-            <path d="M-7 3 L0 -4 L7 3 M-4 3 L-4 7 L4 7 L4 3" stroke="#38bdf8" stroke-width="1.8" fill="none" />
-            <text y="38" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="700">Center B (Camp 2)</text>
-            <text y="50" text-anchor="middle" fill="#fbbf24" font-size="9.5">Child Sheltered</text>
-            <line x1="0" y1="24" x2="0" y2="80" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.6" />
-          </g>
-
-          <!-- Simulated SATCOM Communication Layer Node -->
-          <g id="satcomHubNode" class="stage-node-item" transform="translate(460, 68)">
-            <circle class="satcom-pulse-circle" r="26" fill="none" stroke="#a855f7" />
-            <circle r="26" fill="#19123b" stroke="#a855f7" stroke-width="2" filter="url(#softGlow)" />
-            <!-- Satellite Vector Icon -->
-            <path d="M-8 -3 L-3 -8 L8 3 L3 8 Z M-11 -6 L-15 -10 M-6 -11 L-10 -15 M11 6 L15 10 M6 11 L10 15" stroke="#c084fc" stroke-width="1.8" stroke-linecap="round" fill="none" />
-            <circle r="3" fill="#a855f7" />
-            <!-- Label Badge -->
-            <rect x="-65" y="32" width="130" height="20" rx="10" fill="rgba(124, 58, 237, 0.3)" stroke="#a855f7" stroke-width="1" />
-            <text y="46" text-anchor="middle" fill="#ddd6fe" font-size="10" font-weight="700" letter-spacing="0.5">Simulated SATCOM</text>
-          </g>
-
-          <!-- SATCOM Incline Mesh Lines -->
-          <path id="satcomLineLeft" d="M 190 85 Q 320 60, 434 68" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4" />
-          <path id="satcomLineRight" d="M 735 85 Q 600 60, 486 68" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4" />
-
-          <!-- Main Connection Line Between Parents and Child -->
-          <path id="reuniteConnectionPath" d="M 190 200 C 320 145, 600 145, 735 200" fill="none" stroke="url(#linkGrad)" stroke-width="2.5" opacity="0.3" />
-
-          <!-- Dynamic Data Flow Particles -->
-          <g id="dataParticlesGroup" opacity="0">
-            <circle id="particleA" r="4.5" fill="#38bdf8" filter="url(#softGlow)" />
-            <circle id="particleB" r="3.5" fill="#fbbf24" />
-            <circle id="packetSatcom" r="4.5" fill="#c084fc" filter="url(#softGlow)" />
-          </g>
-
-          <!-- Step 4 Overlay Card: Possible Match Found -->
-          <g id="matchBadgeCard" transform="translate(460, 160)" opacity="0" style="transition: opacity 0.4s ease, transform 0.4s ease;">
-            <rect x="-140" y="-34" width="280" height="68" rx="12" fill="#0c1e3d" stroke="#38bdf8" stroke-width="1.6" filter="url(#softGlow)" />
-            <text y="-12" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="800">✓ Candidate Match Found (100%)</text>
-            <text y="6" text-anchor="middle" fill="#e2e8f0" font-size="11.5" font-weight="600">Parents Ravi &amp; Priya ↔ Child Arun (12yo)</text>
-            <text y="21" text-anchor="middle" fill="#fbbf24" font-size="9.5" font-weight="700">Awaiting human authority verification</text>
-          </g>
-
-          <!-- Step 5 Overlay Card: Human Verification -->
-          <g id="verifyBadgeCard" transform="translate(460, 160)" opacity="0" style="transition: opacity 0.4s ease, transform 0.4s ease;">
-            <rect x="-145" y="-34" width="290" height="68" rx="12" fill="#06271e" stroke="#10b981" stroke-width="2" filter="url(#softGlow)" />
-            <circle cx="-106" cy="0" r="16" fill="#059669" />
-            <path d="M-112 0 L-108 4 L-100 -4" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-            <text y="-9" x="-76" fill="#a7f3d0" font-size="12" font-weight="800">AUTHORITY CONFIRMED</text>
-            <text y="7" x="-76" fill="#ffffff" font-size="11.5" font-weight="700">Parent-Child Relation Verified</text>
-            <text y="21" x="-76" fill="#34d399" font-size="9.5">Relief Officer ID: SEC7-084</text>
-          </g>
-
-          <!-- Step 6 Symbol: Reunited Heart & Family Banner -->
-          <g id="reunitedHeartSymbol" transform="translate(460, 130)" opacity="0" style="transition: opacity 0.5s ease, transform 0.5s ease;">
-            <circle r="22" fill="#059669" class="reunited-heart-pulse" />
-            <path d="M0 -6 C-5 -13, -12 -5, -12 0 C-12 7, 0 14, 0 14 C0 14, 12 7, 12 0 C12 -5, 5 -13, 0 -6 Z" fill="#ffffff" />
-            <g transform="translate(0, 116)">
-              <rect x="-140" y="-14" width="280" height="42" rx="10" fill="#063223" stroke="#10b981" stroke-width="1.8" />
-              <text y="4" text-anchor="middle" fill="#34d399" font-size="12.5" font-weight="800">👨‍👩‍👦 Family Reunited: Father, Mother &amp; Child</text>
-              <text y="20" text-anchor="middle" fill="#a7f3d0" font-size="9.5" font-weight="600">Reunification process initiated • Safe transport ready.</text>
-            </g>
-          </g>
-
-          <!-- ==========================================================
-               THE THREE FAMILY FIGURES: FATHER, MOTHER, AND CHILD
-               ========================================================== -->
-
-          <!-- 1. FATHER FIGURE (Tall adult, broad shoulders) -->
-          <g id="figureFather" class="reunite-figure" transform="translate(145, 195)">
-            <ellipse cx="0" cy="58" rx="20" ry="5" fill="rgba(0,0,0,0.35)" />
-            <!-- Head -->
-            <circle cx="0" cy="-6" r="16" fill="url(#personGradFather)" class="figure-body-fill" id="figBodyFather" />
-            <!-- Torso -->
-            <path d="M-18 48 C-18 20, -10 14, 0 14 C10 14, 18 20, 18 48 Z" fill="url(#personGradFather)" class="figure-body-fill" id="figTorsoFather" />
-            <!-- Labels -->
-            <text y="74" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Father</text>
-            <text y="88" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="600" id="figRoleFather">Ravi Kumar</text>
-          </g>
-
-          <!-- 2. MOTHER FIGURE (Adult female silhouette, graceful) -->
-          <g id="figureMother" class="reunite-figure" transform="translate(225, 200)">
-            <ellipse cx="0" cy="53" rx="18" ry="4.5" fill="rgba(0,0,0,0.35)" />
-            <!-- Head -->
-            <circle cx="0" cy="-2" r="14.5" fill="url(#personGradMother)" class="figure-body-fill" id="figBodyMother" />
-            <!-- Torso -->
-            <path d="M-16 48 C-16 22, -9 16, 0 16 C9 16, 16 22, 16 48 Z" fill="url(#personGradMother)" class="figure-body-fill" id="figTorsoMother" />
-            <!-- Labels -->
-            <text y="74" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Mother</text>
-            <text y="88" text-anchor="middle" fill="#a5b4fc" font-size="10" font-weight="600" id="figRoleMother">Priya Kumar</text>
-          </g>
-
-          <!-- 3. CHILD FIGURE (Young child, smaller stature) -->
-          <g id="figureChild" class="reunite-figure" transform="translate(735, 212)">
-            <ellipse cx="0" cy="41" rx="15" ry="4" fill="rgba(0,0,0,0.35)" />
-            <!-- Head -->
-            <circle cx="0" cy="10" r="11.5" fill="url(#personGradChild)" class="figure-body-fill" id="figBodyChild" />
-            <!-- Torso -->
-            <path d="M-13 42 C-13 28, -7 24, 0 24 C7 24, 13 28, 13 42 Z" fill="url(#personGradChild)" class="figure-body-fill" id="figTorsoChild" />
-            <!-- Labels -->
-            <text y="64" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Child</text>
-            <text y="78" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600" id="figRoleChild">Arun (12yo)</text>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Hero Card Bottom Metrics Strip -->
-      <div class="reunite-hero-stats">
-        <div class="hero-stat-item">
-          <span class="hero-stat-label">Possible Candidates</span>
-          <span class="hero-stat-val" id="heroStatMatches">0 Active</span>
-        </div>
-        <div class="hero-stat-item">
-          <span class="hero-stat-label">Verified Reunifications</span>
-          <span class="hero-stat-val" id="heroStatVerified">0 Confirmed</span>
-        </div>
-        <div class="hero-stat-item">
-          <span class="hero-stat-label">Relief Centers In Mesh</span>
-          <span class="hero-stat-val">4 Field Shelters</span>
-        </div>
-        <div class="hero-stat-item">
-          <span class="hero-stat-label">Inter-Camp Channel</span>
-          <span class="hero-stat-val" style="color: #c084fc;">Simulated SATCOM</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================================================================
-         TAB 1: INTAKE & AI REGISTRATION
-         ==================================================================== -->
-    <div class="tab-pane active" id="tab-intake">
-      <div class="grid-2col">
-        
-        <!-- Left Column: Standard Structured Form (Preserves #form and inputs) -->
-        <section class="panel">
-          <div class="panel-header">
-            <div class="panel-header-left">
-              <h2 class="panel-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-                Register Person
-              </h2>
-            </div>
-            <span class="pill" id="formModeTag">Field Intake</span>
-          </div>
-
-          <!-- Offline AI Information Normalization & Voice Dispatch Deck -->
-          <div class="ai-intake-deck">
-            <div class="ai-deck-header">
-              <span class="ai-deck-title">
-                <svg class="ai-sparkle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                Offline AI Voice &amp; Dispatch Normalizer
-              </span>
-              <span class="ai-badge">Offline Local AI</span>
-            </div>
-
-            <div class="voice-input-bar">
-              <button type="button" class="voice-record-btn" id="voiceRecordBtn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                <span id="voiceBtnText">Record Voice Dispatch</span>
-              </button>
-            </div>
-
-            <textarea 
-              id="aiDispatchInput" 
-              class="ai-dispatch-textarea" 
-              placeholder="Speak via microphone or type unstructured field notes here... (e.g. 'Found 12yo boy Arun Kumar at River Bridge flood zone, father is Ravi Kumar')"
-            ></textarea>
-
-            <div class="ai-deck-actions">
-              <div class="sample-chips">
-                <span class="quick-samples-label">Samples:</span>
-                <button type="button" class="sample-chip" data-sample="Found 12yo boy Arun Kumar at River Bridge flood zone, father is Ravi Kumar">Child Arun (12yo)</button>
-                <button type="button" class="sample-chip" data-sample="Missing elderly lady Meena Devi age 68 near North Temple, son is Dr Rajesh">Elderly Meena (68yo)</button>
-                <button type="button" class="sample-chip" data-sample="Found survivor 8 year old girl Pooja at Camp 2, says mother is Sunita">Pooja (8yo)</button>
-              </div>
-
-              <button type="button" class="ai-extract-btn" id="aiExtractBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Structure &amp; Auto-Fill Form
-              </button>
-            </div>
-
-            <!-- Structured Clues Preview -->
-            <div class="ai-preview-box" id="aiPreviewBox">
-              <div class="ai-preview-title">
-                <span>Extracted Clues Normalization</span>
-                <span id="aiPreviewConfidence" style="font-size: 11px; color: #0284c7;">High Confidence</span>
-              </div>
-              <div class="ai-tags-row" id="aiPreviewTags"></div>
-            </div>
-          </div>
-
-          <!-- The Registration Form -->
-          <form id="form">
-            
-            <!-- Record Type Segmented Selector -->
-            <label>Record Classification</label>
-            <div class="kind-selector">
-              <label class="kind-option-card survivor-card selected" id="kindCardSurvivor">
-                <input type="radio" name="kindRadio" value="survivor" checked>
-                <div>
-                  <span class="kind-title" style="color: #059669;">🟢 Survivor Found</span>
-                  <span class="kind-desc">Individual is present &amp; sheltered at relief center</span>
-                </div>
-              </label>
-
-              <label class="kind-option-card missing-card" id="kindCardMissing">
-                <input type="radio" name="kindRadio" value="missing">
-                <div>
-                  <span class="kind-title" style="color: #d97706;">🟠 Missing-Person Report</span>
-                  <span class="kind-desc">Family inquiry looking for separated individual</span>
-                </div>
-              </label>
-            </div>
-
-            <!-- Hidden/Synchronized standard kind select for 100% backend/script compatibility -->
-            <select name="kind" id="kindSelect" style="display: none;">
-              <option value="survivor">Survivor found</option>
-              <option value="missing">Missing-person report</option>
-            </select>
-
-            <div class="form-grid">
-              <!-- Camp Selection -->
-              <div class="form-group">
-                <label for="campSelect">Relief Center / Camp Location</label>
-                <select name="camp" id="campSelect">
-                  <option value="Camp 1">Camp 1 — Sector North Evac</option>
-                  <option value="Camp 2">Camp 2 — Coastal Relief Base</option>
-                  <option value="Camp 3">Camp 3 — Hilltop Field Clinic</option>
-                  <option value="Camp 4">Camp 4 — Valley Shelter</option>
-                </select>
-              </div>
-
-              <!-- Approximate Age -->
-              <div class="form-group">
-                <label for="ageInput">Approximate Age <span class="label-hint">(0 - 120 years)</span></label>
-                <input name="age" id="ageInput" type="number" min="0" max="120" placeholder="e.g. 12">
-              </div>
-
-              <!-- Person's Name -->
-              <div class="form-group full-width">
-                <label for="nameInput">Full Name of Person <span style="color:#ef4444;">*</span></label>
-                <input name="name" id="nameInput" required maxlength="150" placeholder="e.g. Arun Kumar">
-              </div>
-
-              <!-- Family Relative's Name -->
-              <div class="form-group">
-                <label for="relativeNameInput">Family Member / Relative Name</label>
-                <input name="relative_name" id="relativeNameInput" maxlength="150" placeholder="e.g. Ravi Kumar">
-              </div>
-
-              <!-- Relationship -->
-              <div class="form-group">
-                <label for="relationshipSelect">Kinship Relationship</label>
-                <select name="relationship" id="relationshipSelect">
-                  <option value="">Not specified</option>
-                  <option>Father</option>
-                  <option>Mother</option>
-                  <option>Son</option>
-                  <option>Daughter</option>
-                  <option>Sibling</option>
-                  <option>Spouse</option>
-                  <option>Grandparent</option>
-                  <option>Guardian</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <!-- Last Known Location -->
-              <div class="form-group full-width">
-                <label for="locationInput">Last Known Location / Shelter Bay</label>
-                <input name="location" id="locationInput" maxlength="150" placeholder="e.g. River Bridge / Sector 3 Flood Zone / Tent 14">
-              </div>
-
-              <!-- Additional Details & Physical Clues -->
-              <div class="form-group full-width">
-                <label for="notesInput">Identifying Clues &amp; Medical Notes</label>
-                <textarea name="notes" id="notesInput" rows="2" maxlength="1000" placeholder="Clothing details, physical marks, medical needs, circumstances of separation..."></textarea>
-              </div>
-            </div>
-
-            <!-- Form Actions -->
-            <div class="form-actions">
-              <button type="submit" class="primary-save" id="btnSubmitRecord">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                <span>Save Offline to IndexedDB</span>
-              </button>
-
-              <button type="button" class="secondary-outline" id="btnResetForm">
-                Clear
-              </button>
-            </div>
-          </form>
-
-          <!-- Feedback message for form submission (preserves #message) -->
-          <p id="message" role="status" class="form-feedback"></p>
-        </section>
-
-        <!-- Right Column: Operations & Quick Field Actions -->
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-              Camp Operations
-            </h2>
-          </div>
-
-          <p class="small" style="margin-bottom: 16px; color: var(--text-muted);">
-            Registrations are stored locally in IndexedDB first, allowing field workers to operate without interruption when cellular and internet backhauls fail.
-          </p>
-
-          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-            <button id="sync" class="secondary btn-satcom">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              <span>↻ Sync camps now (SATCOM)</span>
-            </button>
-
-            <button id="matches" class="btn-emerald">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <span>Find possible matches</span>
-            </button>
-
-            <button id="demo" class="secondary-outline">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              <span>Load fictional demo family</span>
-            </button>
-          </div>
-
-          <!-- Status feedback for sync (preserves #syncMessage) -->
-          <p id="syncMessage" role="status" class="small" style="font-weight: 600; min-height: 22px; color: var(--relief-cyan);"></p>
-
-          <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 16px 0;">
-
-          <!-- Field Operations Info Callout -->
-          <div style="background: var(--bg-card-subtle); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); font-size: 12.5px; color: var(--text-muted);">
-            <div style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <span>🛡️ Humanitarian Field Protocol</span>
-            </div>
-            <ul style="padding-left: 18px; line-height: 1.6;">
-              <li>All records persist on this device in <b>IndexedDB</b>.</li>
-              <li>Matches are explainable heuristic suggestions.</li>
-              <li>Authorized relief staff must physically verify family relations prior to public notification.</li>
-            </ul>
-          </div>
-        </section>
-
-      </div>
-    </div>
-
-    <!-- ====================================================================
-         TAB 2: MATCH HUB & EXPLAINABLE AI VERIFICATION
-         ==================================================================== -->
-    <div class="tab-pane" id="tab-matches">
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <h2 class="panel-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Cross-Center Matching Hub &amp; Identity Verification
-            </h2>
-          </div>
-          <span class="pill" id="matchResultsBadge">0 Candidates</span>
-        </div>
-
-        <!-- Human Authority Callout -->
-        <div class="human-review-callout">
-          <svg class="callout-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div>
-            <b>Mandatory Human Verification Notice:</b> AI matching computes heuristic similarity across multiple clues (name, relatives, age tolerance). Authority verification by authorized relief personnel is required before notifying separated relatives.
-          </div>
-        </div>
-
-        <!-- Match Actions Toolbar -->
-        <div class="match-ops-toolbar">
-          <div class="toolbar-buttons">
-            <button type="button" class="btn-emerald" id="btnRunMatchTab">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Run Multi-Factor Matching Engine
-            </button>
-
-            <button type="button" class="secondary" id="btnSyncFromMatchTab">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              Sync Camps via SATCOM
-            </button>
-
-            <button type="button" class="secondary-outline" id="btnDemoFromMatchTab">
-              Load Fictional Scenario
-            </button>
-          </div>
-
-          <div style="font-size: 12px; color: var(--text-muted);" id="matchEngineStatus">
-            Engine: Multi-Factor Heuristic Clue Matcher
-          </div>
-        </div>
-
-        <!-- Candidate Results Container (Preserves #matchList) -->
-        <div id="matchList" class="small">
-          Sync both camps, then run matching.
-        </div>
-      </section>
-    </div>
-
-    <!-- ====================================================================
-         TAB 3: OFFLINE LOCAL DATABASE (INDEXEDDB SEARCH)
-         ==================================================================== -->
-    <div class="tab-pane" id="tab-database">
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <h2 class="panel-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              Locally Available Records
-            </h2>
-          </div>
-          <!-- Preserves #count badge -->
-          <span class="pill" id="count">0</span>
-        </div>
-
-        <!-- Real-Time Search & Multi-Filter Bar -->
-        <div class="search-filter-bar">
-          <div class="search-input-wrap">
-            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input 
-              type="text" 
-              id="localSearchInput" 
-              class="search-input" 
-              placeholder="Search local IndexedDB by name, relative, location, notes, ID..."
-            >
-          </div>
-
-          <!-- Kind Filter Pills -->
-          <div class="filter-pills-row">
-            <button type="button" class="filter-pill-btn active" data-filter="all">All Records</button>
-            <button type="button" class="filter-pill-btn" data-filter="missing">🟠 Missing Only</button>
-            <button type="button" class="filter-pill-btn" data-filter="survivor">🟢 Survivors Only</button>
-          </div>
-
-          <!-- Camp Dropdown Filter -->
-          <select id="filterCampSelect" class="camp-filter-select">
-            <option value="all">All Relief Camps</option>
-            <option value="Camp 1">Camp 1</option>
-            <option value="Camp 2">Camp 2</option>
-            <option value="Camp 3">Camp 3</option>
-            <option value="Camp 4">Camp 4</option>
-          </select>
-        </div>
-
-        <!-- Rendered Records Container (Preserves #records) -->
-        <div id="records" class="small">No records yet.</div>
-      </section>
-    </div>
-
-    <!-- ====================================================================
-         TAB 4: SIMULATED SATCOM COMMUNICATION LAYER
-         ==================================================================== -->
-    <div class="tab-pane" id="tab-satcom">
-      <div class="satcom-visualizer-card">
-        <div class="satcom-header">
-          <div class="satcom-title">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
-            <span>Simulated Tactical SATCOM Communication Layer</span>
-          </div>
-          <span class="satcom-badge">L-Band / Ku-Band Relay</span>
-        </div>
-
-        <!-- Animated Mesh Diagram -->
-        <div class="satcom-mesh-diagram">
-          <div class="orbit-node">
-            <div class="node-icon-circle">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            </div>
-            <span class="node-label">Camp 1</span>
-            <span class="node-subtext">Sector North Evac</span>
-          </div>
-
-          <div class="beam-ray"></div>
-
-          <div class="orbit-node">
-            <div class="node-icon-circle satellite">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            </div>
-            <span class="node-label">GEO Satellite Relay</span>
-            <span class="node-subtext">Altitude 35,786 km</span>
-          </div>
-
-          <div class="beam-ray"></div>
-
-          <div class="orbit-node">
-            <div class="node-icon-circle">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            </div>
-            <span class="node-label">Camp 2</span>
-            <span class="node-subtext">Coastal Relief Base</span>
-          </div>
-        </div>
-
-        <!-- Telemetry Gauges -->
-        <div class="telemetry-grid">
-          <div class="telemetry-box">
-            <div class="telemetry-box-label">Carrier Frequency</div>
-            <div class="telemetry-box-value">1626.5 MHz (L-Band)</div>
-          </div>
-          <div class="telemetry-box">
-            <div class="telemetry-box-label">Simulated Round-Trip Delay</div>
-            <div class="telemetry-box-value">~640 ms (GEO Orbit)</div>
-          </div>
-          <div class="telemetry-box">
-            <div class="telemetry-box-label">Carrier-to-Noise (C/N)</div>
-            <div class="telemetry-box-value">18.4 dB (Optimal)</div>
-          </div>
-          <div class="telemetry-box">
-            <div class="telemetry-box-label">Payload Security</div>
-            <div class="telemetry-box-value">Simulated AES-256</div>
-          </div>
-        </div>
-
-        <!-- Sync Trigger Button inside SATCOM tab -->
-        <div style="margin-bottom: 16px;">
-          <button type="button" class="btn-satcom" id="btnSatcomTriggerSync" style="padding: 12px 20px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            <span>Transmit Delta Bundle via Satellite Uplink</span>
-          </button>
-        </div>
-
-        <!-- Live Satellite Terminal Log -->
-        <div class="satcom-console" id="satcomConsoleLog">
-          <div class="console-entry"><span class="timestamp">[SYS_INIT]</span> SATCOM telemetry daemon initialized. Geostationary transponder nominal.</div>
-          <div class="console-entry"><span class="timestamp">[SYS_INIT]</span> Local IndexedDB registered as primary offline vault.</div>
-          <div class="console-entry"><span class="timestamp">[SYS_INIT]</span> Ready for inter-center delta synchronizations.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ====================================================================
-         TAB 5: OPERATIONAL PROTOCOL & ARCHITECTURE EXPLAINER
-         ==================================================================== -->
-    <div class="tab-pane" id="tab-protocol">
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <h2 class="panel-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              End-to-End Technical Pipeline &amp; Field Protocol
-            </h2>
-          </div>
-          <span class="pill">Preserved Architecture</span>
-        </div>
-
-        <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 16px;">
-          REUNITE AI adheres strictly to the offline-first humanitarian workflow designed for austere disaster zones where telecom infrastructure is destroyed.
-        </p>
-
-        <div class="protocol-steps-grid">
-          <div class="protocol-step-card">
-            <div class="step-num-badge">1</div>
-            <h3 class="step-title">PWA &amp; Offline Voice AI</h3>
-            <p class="step-desc">Field responders capture spoken or written dispatches. Offline AI parses names, ages, kinship relations, and physical clues locally.</p>
-          </div>
-
-          <div class="protocol-step-card">
-            <div class="step-num-badge">2</div>
-            <h3 class="step-title">Local IndexedDB Vault</h3>
-            <p class="step-desc">Information is normalized and committed instantly to browser IndexedDB storage without requiring network connectivity.</p>
-          </div>
-
-          <div class="protocol-step-card">
-            <div class="step-num-badge">3</div>
-            <h3 class="step-title">Simulated SATCOM Mesh</h3>
-            <p class="step-desc">When satellite window opens, delta records are serialized and broadcast to remote disaster relief centers via simulated SATCOM.</p>
-          </div>
-
-          <div class="protocol-step-card">
-            <div class="step-num-badge">4</div>
-            <h3 class="step-title">Multi-Factor Matching</h3>
-            <p class="step-desc">The matching engine ranks cross-camp candidates using explainable weights: 65% Name, 20% Relative Kinship, 15% Age Delta.</p>
-          </div>
-
-          <div class="protocol-step-card">
-            <div class="step-num-badge">5</div>
-            <h3 class="step-title">Human Verification</h3>
-            <p class="step-desc">Authorized relief staff verify identity dossiers side-by-side to prevent false positives and protect vulnerable populations.</p>
-          </div>
-
-          <div class="protocol-step-card">
-            <div class="step-num-badge">6</div>
-            <h3 class="step-title">Family Notification</h3>
-            <p class="step-desc">Once verified by authority, official emergency SMS, camp P.A. broadcasts, and transport passes are dispatched to reunite the family.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <p class="small" style="text-align: center; color: var(--text-faint); margin-top: 14px;">
-      Demo uses fictional information. Do not enter real survivor personal data. Device storage is not encrypted by this prototype.
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#123047"><link rel="manifest" href="/manifest.webmanifest"><title>REUNITE AI — Relief Desk</title><style>
+:root{font-family:system-ui,Segoe UI,sans-serif;color:#173047;background:#edf4f7}*{box-sizing:border-box}body{margin:0}header{background:#123047;color:white;padding:25px max(20px,calc((100% - 1000px)/2))}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#c6e5ef}main{max-width:1000px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{background:white;border:1px solid #d5e3eb;border-radius:15px;padding:20px;box-shadow:0 4px 15px #1230470a}.wide{grid-column:1/-1}label{display:block;font-size:13px;font-weight:650;margin:12px 0 5px}input,select,textarea{width:100%;border:1px solid #bbced8;border-radius:8px;padding:10px;font:inherit}textarea{resize:vertical}button{background:#087d85;color:white;border:0;border-radius:8px;padding:11px 17px;font-weight:700;cursor:pointer;margin-top:15px}button.secondary{background:#21445b}.status{padding:10px 14px;background:#dff6e9;border-radius:8px;margin-bottom:16px}.small{font-size:13px;color:#53697a}.record{padding:12px;border-bottom:1px solid #e3ebef}.record:last-child{border:0}.pill{background:#e6f4f7;padding:4px 8px;border-radius:50px;font-size:12px}#message{font-weight:600;color:#086c71}@media(max-width:680px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}}</style></head><body><header><h1>⛑ REUNITE AI</h1><p>Offline-first family reunification • HackNext'26 prototype</p></header><main><div class="status" id="status">Checking network…</div><div class="grid"><section class="panel"><h2>Register a person</h2><form id="form"><label>Relief camp</label><select name="camp"><option>Camp 1</option><option>Camp 2</option></select><label>Record type</label><select name="kind"><option value="survivor">Survivor found</option><option value="missing">Missing-person report</option></select><label>Person's name</label><input name="name" required maxlength="150"><label>Approximate age</label><input name="age" type="number" min="0" max="120"><label>Family member's name</label><input name="relative_name" maxlength="150"><label>Relationship</label><select name="relationship"><option value="">Not specified</option><option>Father</option><option>Mother</option><option>Son</option><option>Daughter</option><option>Sibling</option><option>Other</option></select><label>Last known location</label><input name="location" maxlength="150">
+<label>Additional details</label>
+<textarea name="notes" rows="2" maxlength="1000"></textarea>
+
+<div style="margin-top:15px;">
+    <label for="survivorPhoto">📸 Person Photo</label>
+
+    <input
+        type="file"
+        id="survivorPhoto"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+    >
+<div style="margin-top:12px;">
+    <button type="button" id="openCamera">📷 Open Camera</button>
+    <button type="button" id="capturePhoto" style="display:none;">
+        📸 Capture Photo
+    </button>
+    <button type="button" id="closeCamera" style="display:none;">
+        ✕ Close Camera
+    </button>
+</div>
+
+<video
+    id="cameraPreview"
+    autoplay
+    playsinline
+    muted
+    style="display:none;width:100%;max-width:400px;margin-top:12px;border-radius:10px;">
+</video>
+
+<canvas id="cameraCanvas" style="display:none;"></canvas>
+
+<p id="cameraStatus" role="status"></p>
+    <button type="button" id="analyzePhoto">
+        🔍 Extract Visible Details
+    </button>
+
+    <p id="photoStatus" role="status"></p>
+
+    <label for="photoDescription">AI-Extracted Details</label>
+    <textarea
+    id="photoDescription"
+    name="ai_description"
+    rows="3"
+    maxlength="1000"
+        placeholder="Visible clothing, colors and belongings will appear here"
+    ></textarea>
+
+    <p class="small">
+        AI-generated description. Officer review required.
+        The photo is processed locally and is not saved with the registration.
     </p>
-  </main>
+</div>
 
-  <!-- ======================================================================
-       EMERGENCY FAMILY NOTIFICATION MODAL
-       ====================================================================== -->
-  <div class="modal-backdrop" id="notifyModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="notifyModalTitle">
-    <div class="modal-window">
-      <div class="modal-header">
-        <h3 class="modal-title" id="notifyModalTitle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Emergency Family Notification Dispatch
-        </h3>
-        <button type="button" class="modal-close-btn" id="notifyModalCloseBtn" aria-label="Close dialog">&times;</button>
-      </div>
+<button type="submit">Save offline</button>
+</form><p id="message" role="status"></p>
 
-      <div class="modal-body">
-        <!-- Reunification Success Visual Banner -->
-        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 26px; line-height: 1;">👤 ❤️ 👤</div>
-            <div>
-              <div style="font-weight: 800; font-size: 14px; color: #065f46;">Family Reunited</div>
-              <div style="font-size: 11.5px; color: #047857;">Official Reunification Process Initiated</div>
-            </div>
-          </div>
-          <span class="pill" style="background: #ffffff; color: #059669; font-weight: 700; border: 1px solid #a7f3d0;">Verified Match</span>
+</section><section class="panel"><h2>Camp operations</h2><p class="small">Every registration is saved in this browser first. Sync sends records when the server can be reached.</p><button id="sync" class="secondary">↻ Sync camps now</button><button id="matches">Find possible matches</button><button id="demo" class="secondary">Load fictional demo family</button><p id="syncMessage" role="status" class="small"></p><h3>Potential matches</h3><div id="matchList" class="small">Sync both camps, then run matching.</div><p class="small">⚠ Matches are suggestions only. Authorized staff must verify identity and relationships before disclosure.</p></section><section class="panel wide"><h2>Locally available records <span class="pill" id="count">0</span></h2><div id="records" class="small">No records yet.</div></section></div><p class="small">Demo uses fictional information. Do not enter real survivor personal data. Device storage is not encrypted by this prototype.</p></main>
+
+<section class="panel" style="max-width:1000px;margin:20px auto;">
+    <h2>👨‍👩‍👧‍👦 Pre-Disaster Family Database</h2>
+    <p class="small">
+        Fictional household records for family reunification.
+    </p>
+
+    <button id="loadFamilies">
+        View Registered Families
+    </button>
+<button id="findFamilyConnections">
+    🔍 Find Family Connections
+</button>
+
+<div id="familyConnections"></div>
+    <div id="familyList"></div>
+</section>
+
+
+
+
+
+<section class="panel">
+    <h2>👮 Officer Dashboard</h2>
+    <p>Family reunification case overview</p>
+
+    <button id="refreshDashboard" type="button">
+    ↻ Refresh Dashboard
+</button>
+
+<button id="clearDemoRecords" type="button"
+        style="background:#dc2626;color:white;margin-top:10px;">
+    🗑 Clear All Demo Registrations
+</button>
+
+    <div style="display:flex;gap:15px;flex-wrap:wrap;margin-top:15px;">
+        <div class="record">
+            <h3>⏳ Pending</h3>
+            <h2 id="pendingCount">0</h2>
         </div>
 
-        <p style="margin-bottom: 14px; color: var(--text-muted); font-size: 13px;">
-          The following official notification will be transmitted across emergency cellular SMS and shelter communication channels:
-        </p>
-
-        <div class="dispatch-preview-card" id="notifyDispatchPreview">
-          <!-- Populated dynamically via JS -->
+        <div class="record">
+            <h3>✓ Verified</h3>
+            <h2 id="verifiedCount">0</h2>
         </div>
 
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12px; color: #166534; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>Identity verified by Authorized Relief Officer ID: <b>OFFICER-SEC7-084</b></span>
+        <div class="record">
+            <h3>✕ Rejected</h3>
+            <h2 id="rejectedCount">0</h2>
         </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="secondary-outline" id="notifyModalCancelBtn">Cancel</button>
-        <button type="button" class="primary-save" id="notifyModalTransmitBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Transmit Emergency Dispatch
-        </button>
-      </div>
     </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
-
-  <!-- Global Footer -->
-  <footer>
-    <div class="footer-content">
-      <span>⛑ REUNITE AI — Humanitarian Family Reunification &amp; SATCOM Mesh</span>
-      <span>PWA Offline-First • HackNext'26 Prototype • Fictional Data Only</span>
+    
     </div>
-  </footer>
 
-  <script src="/app.js?v=3"></script>
-</body>
-</html>
+    <hr>
+
+    <h3>📸 AI Photo Descriptions</h3>
+    <div id="officerDescriptions">
+        <p>No descriptions loaded yet.</p>
+    </div>
+
+</section>
+</section>
+
+<script src="/app.js"></script>
+
+</body></html>
