@@ -6,6 +6,16 @@ import { extractFromVoice, VOICE_UNAVAILABLE } from '../voice';
 
 const MAX_SECONDS = 30;
 
+const FOUND_GUIDE = [
+  'Name',
+  'Age',
+  'Boy/girl, man/woman',
+  'Village',
+  "Father's or spouse's name",
+  'Clothing or marks',
+  'Where found'
+];
+
 type Phase = 'idle' | 'recording' | 'understanding';
 
 export const RegisterSpeakScreen: React.FC = () => {
@@ -87,10 +97,27 @@ export const RegisterSpeakScreen: React.FC = () => {
 
   const formatTimer = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
+  const guide =
+    registrationType === 'found'
+      ? FOUND_GUIDE
+      : [...FOUND_GUIDE.slice(0, 6), 'Where last seen', 'Your own name'];
+
   return (
     <Screen showBack>
       <h1 className="screen-title">{title}</h1>
-      <div className="flex flex-col items-center text-center pt-6">
+
+      <div className="card py-3 mb-4">
+        <p className="text-sm font-medium text-navy mb-1">Say, in this order:</p>
+        <ol className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-sm text-navy">
+          {guide.map((item, i) => (
+            <li key={item} className="min-w-0">
+              <span className="text-navy-muted">{i + 1}.</span> {item}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="flex flex-col items-center text-center">
         <button
           type="button"
           id="mic-action-btn"
@@ -108,22 +135,18 @@ export const RegisterSpeakScreen: React.FC = () => {
             : <Mic className="w-12 h-12 text-white" strokeWidth={1.75} />}
         </button>
 
-        <p className="text-base font-semibold text-navy mt-5" aria-live="polite">
+        <p className="text-base font-semibold text-navy mt-4" aria-live="polite">
           {phase === 'recording' ? 'Listening…' : phase === 'understanding' ? 'Understanding…' : 'Tap and speak'}
         </p>
 
-        {phase === 'recording' ? (
+        {phase === 'recording' && (
           <p className="mt-1 text-sm font-medium text-urgent">
             {formatTimer(seconds)} of {formatTimer(MAX_SECONDS)} · Tap to stop
           </p>
-        ) : phase === 'idle' ? (
-          <p className="mt-1 text-sm text-navy-muted max-w-[280px]">
-            Say: name, age, village, father's name, what they are wearing, who they are looking for
-          </p>
-        ) : null}
+        )}
 
         {phase === 'idle' && (
-          <button type="button" onClick={() => goToVerify()} className="btn-text mt-8">
+          <button type="button" onClick={() => goToVerify()} className="btn-text mt-2">
             Type instead
           </button>
         )}
