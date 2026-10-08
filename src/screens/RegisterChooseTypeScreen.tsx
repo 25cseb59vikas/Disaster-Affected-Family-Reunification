@@ -1,7 +1,31 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { TopBar } from '../components/TopBar';
-import { BottomNav } from '../components/BottomNav';
+import { Screen } from '../components/Screen';
+import { ChevronRight, Search, UserPlus, type LucideIcon } from 'lucide-react';
+
+const ChoiceCard: React.FC<{ Icon: LucideIcon; title: string; helper: string; path: string; onClick: () => void }> = ({
+  Icon,
+  title,
+  helper,
+  path,
+  onClick
+}) => (
+  <button
+    type="button"
+    data-path={path}
+    onClick={onClick}
+    className="card w-full min-h-[72px] flex items-center gap-3 text-left cursor-pointer transition-colors hover:border-navy/30 active:bg-pressed"
+  >
+    <span className="w-10 h-10 shrink-0 rounded-full bg-terracotta-soft text-terracotta flex items-center justify-center">
+      <Icon className="icon" />
+    </span>
+    <span className="flex-1 min-w-0">
+      <span className="block text-lg font-semibold text-navy">{title}</span>
+      <span className="block text-sm text-navy-muted">{helper}</span>
+    </span>
+    <ChevronRight className="icon text-navy-muted" />
+  </button>
+);
 
 export const RegisterChooseTypeScreen: React.FC = () => {
   const { navigateTo, setRegistrationType } = useApp();
@@ -12,51 +36,24 @@ export const RegisterChooseTypeScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col justify-between max-w-lg mx-auto">
-      <div>
-        <TopBar />
-
-        <main className="p-6 pt-8">
-          <h1 className="text-[28px] font-bold text-navy leading-tight text-left mb-8">
-            Register
-          </h1>
-
-          <div className="space-y-5">
-            {/* Button 1: Person found here */}
-            <button
-              type="button"
-              data-path="register-found"
-              onClick={() => handleSelectType('found')}
-              className="w-full min-h-[100px] p-6 rounded-card bg-surface border border-borderSlate hover:border-navy text-left shadow-subtle hover:shadow transition-all group flex flex-col justify-center cursor-pointer active:bg-slate-50"
-            >
-              <span className="text-[22px] font-bold text-navy group-hover:text-terracotta transition-colors">
-                Person found here
-              </span>
-              <span className="text-[18px] text-navy-muted mt-1 leading-normal">
-                Someone who has arrived at this site
-              </span>
-            </button>
-
-            {/* Button 2: Looking for someone */}
-            <button
-              type="button"
-              data-path="register-missing"
-              onClick={() => handleSelectType('missing')}
-              className="w-full min-h-[100px] p-6 rounded-card bg-surface border border-borderSlate hover:border-navy text-left shadow-subtle hover:shadow transition-all group flex flex-col justify-center cursor-pointer active:bg-slate-50"
-            >
-              <span className="text-[22px] font-bold text-navy group-hover:text-terracotta transition-colors">
-                Looking for someone
-              </span>
-              <span className="text-[18px] text-navy-muted mt-1 leading-normal">
-                A family member is searching
-              </span>
-            </button>
-          </div>
-        </main>
+    <Screen nav="register">
+      <h1 className="screen-title">Register</h1>
+      <div className="card-stack">
+        <ChoiceCard
+          Icon={UserPlus}
+          title="Person found here"
+          helper="Someone who has arrived at this site"
+          path="register-found"
+          onClick={() => handleSelectType('found')}
+        />
+        <ChoiceCard
+          Icon={Search}
+          title="Looking for someone"
+          helper="A family member is searching"
+          path="register-missing"
+          onClick={() => handleSelectType('missing')}
+        />
       </div>
-
-      <div className="h-20" />
-      <BottomNav activeTab="register" />
-    </div>
+    </Screen>
   );
 };

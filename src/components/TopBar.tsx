@@ -1,16 +1,15 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface TopBarProps {
   showBack?: boolean;
-  backTitle?: string;
-  hideNavInfo?: boolean;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ showBack = false, backTitle, hideNavInfo = false }) => {
-  const { currentSite, volunteerName, offlineCount, isOnline, syncOfflineQueue, goBack, canGoBack } = useApp();
+export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
+  const { currentSite, volunteerName, offlineCount, syncOfflineQueue, goBack, canGoBack, navigateTo } = useApp();
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const siteName = currentSite.split(' – ')[0];
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -18,76 +17,49 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false, backTitle, hid
     setIsSyncing(false);
   };
 
-  return (
-    <header className="bg-navy text-surface sticky top-0 z-40 shadow-sm">
-      {/* Main Top Header */}
-      <div className="h-14 px-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {showBack && canGoBack && (
-            <button
-              onClick={goBack}
-              aria-label="Go back"
-              className="w-10 h-10 -ml-2 rounded flex items-center justify-center text-surface hover:bg-white/10 active:bg-white/20 transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 stroke-[2.2]" />
-            </button>
-          )}
-          <div className="leading-tight">
-            <h1 className="text-[19px] font-semibold tracking-tight text-white">
-              {backTitle || currentSite}
-            </h1>
-            {!hideNavInfo && (
-              <p className="text-[14px] text-white/75 font-normal">
-                Volunteer: {volunteerName}
-              </p>
-            )}
-          </div>
-        </div>
+  const waiting = offlineCount > 0;
 
-        {/* Sync / Offline Status Button */}
-        {!hideNavInfo && (
+  return (
+    <header className="flex-none">
+      <div className="h-header bg-header text-white pl-4 pr-2 flex items-center gap-2">
+        {showBack && canGoBack && (
           <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${
-              offlineCount > 0
-                ? 'bg-amber-500/20 text-amber-200 border border-amber-400/40 hover:bg-amber-500/30'
-                : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 hover:bg-emerald-500/30'
-            }`}
-            title="Tap to synchronize database"
+            type="button"
+            onClick={goBack}
+            aria-label="Go back"
+            className="-ml-3 w-11 h-11 shrink-0 rounded-button flex items-center justify-center hover:bg-white/10"
           >
-            {isSyncing ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : isOnline ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-300" />
-            ) : (
-              <WifiOff className="w-3.5 h-3.5 text-amber-300" />
-            )}
-            <span>{isSyncing ? 'Syncing...' : isOnline ? 'Online' : 'Offline'}</span>
+            <ArrowLeft className="icon" />
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-semibold truncate">{siteName}</p>
+          <p className="text-xs text-white/70 truncate">{volunteerName}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigateTo('choose_site')}
+          className="shrink-0 min-h-[44px] px-3 text-sm font-medium text-white/90 hover:text-white rounded-button hover:bg-white/10"
+        >
+          Switch
+        </button>
+      </div>
+
+      <div className="h-status bg-surface border-b border-borderSlate pl-4 pr-2 flex items-center gap-2 text-xs whitespace-nowrap">
+        <span aria-hidden className={`w-2 h-2 rounded-full shrink-0 ${waiting ? 'bg-pending' : 'bg-verified'}`} />
+        <span className="flex-1 min-w-0 truncate text-navy-muted" aria-live="polite">
+          {isSyncing ? 'Syncing…' : waiting ? `Offline · ${offlineCount} waiting` : 'Synced'}
+        </span>
+        {waiting && !isSyncing && (
+          <button
+            type="button"
+            onClick={handleSync}
+            className="relative shrink-0 h-full px-2 text-xs font-medium text-civilBlue hover:underline before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']"
+          >
+            Sync now
           </button>
         )}
       </div>
-
-      {/* Offline Status Strip */}
-      {!hideNavInfo && (
-        <div className={`px-4 py-1 text-[13px] font-medium flex items-center justify-between border-t ${
-          offlineCount > 0 ? 'bg-[#18263A] text-amber-200 border-navy/40' : 'bg-[#132235] text-emerald-300 border-navy/40'
-        }`}>
-          <span>
-            {offlineCount > 0
-              ? `Offline · ${offlineCount} waiting to sync (Dexie IndexedDB)`
-              : 'All records synchronized locally & backed up'}
-          </span>
-          {offlineCount > 0 && (
-            <button
-              onClick={handleSync}
-              className="text-terracotta hover:underline font-semibold text-[13px] ml-2"
-            >
-              Sync now
-            </button>
-          )}
-        </div>
-      )}
     </header>
   );
 };

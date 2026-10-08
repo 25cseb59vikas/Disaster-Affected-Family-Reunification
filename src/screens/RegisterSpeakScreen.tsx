@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp, emptyDraft } from '../context/AppContext';
-import { TopBar } from '../components/TopBar';
+import { Screen } from '../components/Screen';
 import { Mic, Square } from 'lucide-react';
 import { extractFromVoice, VOICE_UNAVAILABLE } from '../voice';
 
@@ -88,57 +88,46 @@ export const RegisterSpeakScreen: React.FC = () => {
   const formatTimer = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col justify-between max-w-lg mx-auto">
-      <div>
-        <TopBar showBack={true} backTitle={title} />
+    <Screen showBack>
+      <h1 className="screen-title">{title}</h1>
+      <div className="flex flex-col items-center text-center pt-6">
+        <button
+          type="button"
+          id="mic-action-btn"
+          onClick={handleMicTap}
+          disabled={phase === 'understanding'}
+          className={`w-[120px] h-[120px] rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60 ${
+            phase === 'recording'
+              ? 'bg-urgent ring-8 ring-urgent/15'
+              : 'bg-terracotta hover:bg-terracotta-hover ring-8 ring-terracotta/10'
+          }`}
+          aria-label={phase === 'recording' ? 'Stop recording' : 'Start speaking'}
+        >
+          {phase === 'recording'
+            ? <Square className="w-10 h-10 text-white fill-white" strokeWidth={1.75} />
+            : <Mic className="w-12 h-12 text-white" strokeWidth={1.75} />}
+        </button>
 
-        <main className="p-6 pt-12 flex flex-col items-center text-center">
-          <div className="mt-8 flex flex-col items-center">
-            <button
-              type="button"
-              id="mic-action-btn"
-              onClick={handleMicTap}
-              disabled={phase === 'understanding'}
-              className={`w-40 h-40 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60 ${
-                phase === 'recording'
-                  ? 'bg-urgent ring-8 ring-urgent/20'
-                  : 'bg-terracotta hover:bg-terracotta-hover ring-4 ring-terracotta/20'
-              }`}
-              aria-label={phase === 'recording' ? 'Stop recording' : 'Start speaking'}
-            >
-              {phase === 'recording'
-                ? <Square className="w-14 h-14 text-white fill-white" />
-                : <Mic className="w-16 h-16 text-white stroke-[2.2]" />}
-            </button>
+        <p className="text-base font-semibold text-navy mt-5" aria-live="polite">
+          {phase === 'recording' ? 'Listening…' : phase === 'understanding' ? 'Understanding…' : 'Tap and speak'}
+        </p>
 
-            <h2 className="text-[22px] font-bold text-navy mt-6" aria-live="polite">
-              {phase === 'recording' ? 'Listening…' : phase === 'understanding' ? 'Understanding…' : 'Tap and speak'}
-            </h2>
+        {phase === 'recording' ? (
+          <p className="mt-1 text-sm font-medium text-urgent">
+            {formatTimer(seconds)} of {formatTimer(MAX_SECONDS)} · Tap to stop
+          </p>
+        ) : phase === 'idle' ? (
+          <p className="mt-1 text-sm text-navy-muted max-w-[280px]">
+            Say: name, age, village, father's name, what they are wearing, who they are looking for
+          </p>
+        ) : null}
 
-            {phase === 'recording' ? (
-              <p className="mt-2 text-[18px] font-semibold text-urgent">
-                {formatTimer(seconds)} of {formatTimer(MAX_SECONDS)} · Tap to stop
-              </p>
-            ) : phase === 'idle' ? (
-              <p className="text-[18px] text-navy-muted mt-3 max-w-xs leading-relaxed">
-                Say: name, age, village, father's name, what they are wearing, who they are looking for
-              </p>
-            ) : null}
-          </div>
-
-          {phase === 'idle' && (
-            <div className="mt-16">
-              <button
-                type="button"
-                onClick={() => goToVerify()}
-                className="text-[20px] font-medium text-civilBlue hover:underline p-3 cursor-pointer"
-              >
-                Type instead
-              </button>
-            </div>
-          )}
-        </main>
+        {phase === 'idle' && (
+          <button type="button" onClick={() => goToVerify()} className="btn-text mt-8">
+            Type instead
+          </button>
+        )}
       </div>
-    </div>
+    </Screen>
   );
 };

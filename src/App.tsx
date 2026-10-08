@@ -40,42 +40,53 @@ export const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas text-navy flex flex-col justify-between">
-      {/* Quick Screen Switcher Banner for Field testing & evaluation */}
-      <nav aria-label="Field preview" className="bg-[#0b1422] text-xs text-white/70 py-1.5 px-3 flex items-center justify-between overflow-x-auto border-b border-navy/40 gap-2">
-        <span className="font-semibold text-white/90 whitespace-nowrap">
-          Stitch Disaster Prototype:
-        </span>
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          {[
-            { id: 'choose_site', label: '1. Site' },
-            { id: 'register_choose_type', label: '2. Register' },
-            { id: 'register_speak', label: '3. Speak' },
-            { id: 'verify_details', label: '4. Verify' },
-            { id: 'suggested_matches', label: '5. Matches' },
-            { id: 'match_review', label: '6. Review' },
-            { id: 'family_status_portal', label: '7. Family Portal' },
-            { id: 'search_records', label: '8. Search' },
-            { id: 'priority_cases', label: '9. Priority' },
-          ].map(s => (
-            <button
-              key={s.id}
-              onClick={() => navigateTo(s.id as ScreenId)}
-              className={`px-2 py-0.5 rounded text-[11px] whitespace-nowrap transition-colors cursor-pointer ${
-                currentScreen === s.id
-                  ? 'bg-terracotta text-white font-bold'
-                  : 'bg-white/10 hover:bg-white/20 text-white/80'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      </nav>
+    <>
+      {renderScreen()}
+      {import.meta.env.DEV && <DebugScreenJump current={currentScreen} onJump={navigateTo} />}
+    </>
+  );
+};
 
-      <div className="flex-1 flex flex-col">
-        {renderScreen()}
-      </div>
-    </div>
+const DEBUG_SCREENS: Array<[ScreenId, string]> = [
+  ['choose_site', 'Site'],
+  ['register_choose_type', 'Register'],
+  ['register_speak', 'Speak'],
+  ['verify_details', 'Verify'],
+  ['suggested_matches', 'Matches'],
+  ['match_review', 'Review'],
+  ['family_status_portal', 'Family'],
+  ['search_records', 'Search'],
+  ['priority_cases', 'Priority']
+];
+
+// Dev-only screen jumper. Hidden by default; open with ?debug=1 or Ctrl+Shift+D.
+const DebugScreenJump: React.FC<{ current: ScreenId; onJump: (s: ScreenId) => void }> = ({ current, onJump }) => {
+  const [open, setOpen] = React.useState(() => new URLSearchParams(location.search).has('debug'));
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  if (!open) return null;
+  return (
+    <nav aria-label="Debug screens" className="fixed left-2 bottom-24 z-50 max-w-[calc(100vw-16px)] flex flex-wrap gap-1 p-1.5 rounded-button bg-header/90">
+      {DEBUG_SCREENS.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onJump(id)}
+          className={`px-2 py-1 rounded-badge text-xs ${current === id ? 'bg-terracotta text-white' : 'text-white/80 hover:bg-white/10'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </nav>
   );
 };

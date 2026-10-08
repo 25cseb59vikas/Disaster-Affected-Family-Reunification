@@ -30,7 +30,7 @@ export async function seedInitialData() {
     { id: 'camp-c', name: 'Camp C – Kilvelur Primary School', organization: 'Organization A', activeCount: 72 }
   ]);
 
-  // Seed Records matching Stitch screens
+  // Seed records for the demo screens
   await db.records.bulkAdd([
     {
       syncId: 'rec-1',
@@ -142,7 +142,7 @@ export async function seedInitialData() {
     }
   ]);
 
-  // Seed Suggested Matches matching Stitch Screen 5 & 6
+  // Seed suggested matches for the Matches and Review screens
   await db.matches.bulkAdd([
     {
       matchId: 'match-1',

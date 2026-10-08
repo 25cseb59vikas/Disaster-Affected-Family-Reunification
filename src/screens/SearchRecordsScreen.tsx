@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { TopBar } from '../components/TopBar';
-import { BottomNav } from '../components/BottomNav';
+import { Screen } from '../components/Screen';
 import { db } from '../db/database';
 import type { PersonRecord } from '../types';
+
+const STATUS_BADGE: Record<string, string> = {
+  'Possible match': 'bg-pending-bg text-pending border-pending-border',
+  Reunited: 'bg-verified-bg text-verified border-verified-border',
+  Registered: 'bg-civilBlue-soft text-civilBlue border-civilBlue/20'
+};
 
 export const SearchRecordsScreen: React.FC = () => {
   const { navigateTo, setSelectedMatch } = useApp();
@@ -55,95 +60,46 @@ export const SearchRecordsScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col justify-between max-w-lg mx-auto pb-24">
-      <div>
-        <TopBar />
+    <Screen nav="search">
+      <h1 className="screen-title">Search</h1>
 
-        <main className="p-6 pt-8 space-y-6">
-          <h1 className="text-[28px] font-bold text-navy leading-tight text-left">
-            Search
-          </h1>
+      <input
+        type="search"
+        aria-label="Search by name or village"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        placeholder="Name or village"
+        className="input mb-4"
+      />
 
-          {/* Large search box: 56px tall, 20px text */}
-          <div>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Type a name or village..."
-              className="w-full h-14 px-4 text-[20px] font-medium text-navy bg-surface border border-borderSlate rounded-input focus:outline-none focus:ring-2 focus:ring-navy transition-all"
-            />
-          </div>
+      <div className="card-stack">
+        {filteredRecords.map(r => (
+          <button
+            type="button"
+            key={r.id || r.syncId}
+            onClick={() => handleSelectRecord(r)}
+            className="card w-full flex items-start gap-3 text-left cursor-pointer transition-colors hover:border-navy/30 active:bg-pressed"
+          >
+            <span className="w-12 h-12 shrink-0 rounded-button bg-pressed flex items-center justify-center text-lg font-semibold text-navy-muted overflow-hidden">
+              {r.photoUrl ? <img src={r.photoUrl} alt="" className="w-full h-full object-cover" /> : r.name.charAt(0)}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                <span className="min-w-0 flex-1 text-lg font-semibold text-navy truncate">{r.name}</span>
+                {STATUS_BADGE[r.status] && <span className={`badge ${STATUS_BADGE[r.status]}`}>{r.status}</span>}
+              </span>
+              <span className="block text-sm text-navy-muted truncate">
+                Age {r.approxAge || '–'} · {r.village}
+              </span>
+              <span className="block text-sm text-navy truncate">{r.status === 'Reunited' ? 'Reunited on 24 Oct' : r.site}</span>
+            </span>
+          </button>
+        ))}
 
-          {/* Clean list of result cards */}
-          <div className="space-y-5 text-left">
-            {filteredRecords.map((r) => {
-              const isMatch = r.status === 'Possible match';
-              const isReunited = r.status === 'Reunited';
-              const isRegistered = r.status === 'Registered';
-
-              return (
-                <article
-                  key={r.id || r.syncId}
-                  onClick={() => handleSelectRecord(r)}
-                  className="bg-surface rounded-card border border-borderSlate p-6 shadow-subtle hover:border-navy cursor-pointer transition-all active:bg-slate-50 flex items-start gap-4"
-                >
-                  {/* Neutral Photo Thumbnail 64x64 */}
-                  <div className="w-16 h-16 rounded-lg bg-navy/10 flex-shrink-0 flex items-center justify-center text-navy font-bold text-2xl border border-borderSlate overflow-hidden">
-                    {r.photoUrl ? (
-                      <img src={r.photoUrl} alt={r.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{r.name.charAt(0)}</span>
-                    )}
-                  </div>
-
-                  {/* 3 lines of text and badge */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="text-[20px] font-bold text-navy truncate">
-                        {r.name}
-                      </h2>
-                      {/* One badge per card */}
-                      {isMatch && (
-                        <span className="text-[14px] font-bold px-2 py-0.5 rounded-badge bg-pending-bg text-pending border border-pending-border flex-shrink-0">
-                          Possible match
-                        </span>
-                      )}
-                      {isReunited && (
-                        <span className="text-[14px] font-bold px-2 py-0.5 rounded-badge bg-verified-bg text-verified border border-verified-border flex-shrink-0">
-                          Reunited
-                        </span>
-                      )}
-                      {isRegistered && (
-                        <span className="text-[14px] font-bold px-2 py-0.5 rounded-badge bg-blue-50 text-civilBlue border border-blue-200 flex-shrink-0">
-                          Registered
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-[18px] text-navy-muted mt-1 truncate">
-                      Age {r.approxAge || '–'} · {r.village}
-                    </p>
-
-                    <p className="text-[18px] text-navy font-medium mt-1 truncate">
-                      {isReunited ? 'Reunited on 24 Oct' : r.site}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
-
-            {filteredRecords.length === 0 && (
-              <div className="p-8 text-center text-[18px] text-navy-muted bg-surface rounded-card border border-borderSlate">
-                No records matching "{query}".
-              </div>
-            )}
-          </div>
-        </main>
+        {filteredRecords.length === 0 && (
+          <p className="card text-center text-base text-navy-muted">No records match "{query}".</p>
+        )}
       </div>
-
-      <div className="h-20" />
-      <BottomNav activeTab="search" />
-    </div>
+    </Screen>
   );
 };
