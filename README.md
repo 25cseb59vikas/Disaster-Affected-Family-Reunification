@@ -156,4 +156,4 @@ Settings (environment variables):
 
 The front end reaches the server through the Vite proxy at `/api`.
 
-Test with sample clips (server must be running): `.venvScriptspython server	est_voice.py`
+Test with sample clips (server must be running): `.venv\Scripts\python server\test_voice.py`
