@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight, LifeBuoy, Phone, Search, UserSea
 import type { VoiceDraft } from '../context/AppContext';
 import { siteDb } from '../db/database';
 import { DetailsForm } from '../intake/DetailsForm';
-import { VoiceCapture } from '../intake/VoiceCapture';
+import { IntakeChooser } from '../intake/IntakeChooser';
 import { saveRecord, type NewPerson } from '../records';
 import { linkProps, useRoute } from '../route';
 import { switchRole } from '../role';
@@ -161,8 +161,8 @@ const ReportPage: React.FC = () => {
       <>
         <Back />
         <h1 className="screen-title">Who are you looking for?</h1>
-        <p className="text-sm text-navy-muted -mt-2 mb-4">Speak, or tap "Type instead". You can check and change everything next.</p>
-        <VoiceCapture type="seeking" onDone={setDraft} />
+        <p className="text-sm text-navy-muted -mt-2 mb-4">Speak, take a photo, or type. You can check and change everything next.</p>
+        <IntakeChooser type="seeking" onDone={setDraft} />
       </>
     );
   }

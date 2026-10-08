@@ -24,6 +24,11 @@ export interface VoiceDraft {
   lookingFor: LookingFor[];
   unsure: string[];
   notice: string;
+  /** Taken on the intake screen: the stored thumbnail and a larger copy used only for the description. */
+  photo: string | null;
+  photoLarge: string | null;
+  /** Clothing or marks was filled in from the photo. */
+  clothingFromPhoto: boolean;
 }
 
 export const emptyDraft: VoiceDraft = {
@@ -38,7 +43,10 @@ export const emptyDraft: VoiceDraft = {
   foundWhere: '',
   lookingFor: [],
   unsure: [],
-  notice: ''
+  notice: '',
+  photo: null,
+  photoLarge: null,
+  clothingFromPhoto: false
 };
 
 export type SyncStatus = 'offline' | 'syncing' | 'synced';

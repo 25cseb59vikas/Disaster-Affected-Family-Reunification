@@ -14,7 +14,7 @@ function toJpeg(source: CanvasImageSource, width: number, height: number, maxPx 
   return canvas.toDataURL('image/jpeg', maxPx === THUMBNAIL_PX ? 0.7 : 0.85);
 }
 
-interface Picked {
+export interface Picked {
   thumbnail: string;
   large: string;
 }
@@ -22,7 +22,7 @@ interface Picked {
 const both = (source: CanvasImageSource, w: number, h: number): Picked => ({ thumbnail: toJpeg(source, w, h), large: toJpeg(source, w, h, LARGE_PX) });
 
 // Shrinks a picked image so it fits in IndexedDB and sync payloads.
-function fileImages(file: File): Promise<Picked> {
+export function fileImages(file: File): Promise<Picked> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -40,9 +40,10 @@ function fileImages(file: File): Promise<Picked> {
 
 // Phones and tablets (touch as the main pointer) open the rear camera through the file picker.
 // Laptops and desktops get the webcam as well as file upload.
-const isTouchDevice = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+export const isTouchDevice = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
-const Webcam: React.FC<{ onCapture: (picked: Picked) => void; onClose: () => void }> = ({ onCapture, onClose }) => {
+/** Live webcam with Capture. `extra` adds buttons next to Capture (e.g. a file upload fallback). */
+export const Webcam: React.FC<{ onCapture: (picked: Picked) => void; onClose: () => void; extra?: React.ReactNode }> = ({ onCapture, onClose, extra }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
@@ -92,6 +93,7 @@ const Webcam: React.FC<{ onCapture: (picked: Picked) => void; onClose: () => voi
             Capture
           </button>
         )}
+        {extra}
         <button type="button" onClick={onClose} className="btn-text">
           Cancel
         </button>

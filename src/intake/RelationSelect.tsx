@@ -29,7 +29,9 @@ export const RelationSelect: React.FC<{
 }> = ({ id, value, onChange, required, className = '' }) => {
   const normal = value.trim().toLowerCase();
   const listed = RELATIONS.includes(normal);
-  const [otherOpen, setOtherOpen] = useState(Boolean(normal) && !listed);
+  // "Other" is open when chosen, or when the value (typed, or filled by voice later) is not in the list.
+  const [otherChosen, setOtherChosen] = useState(false);
+  const otherOpen = otherChosen || (Boolean(normal) && !listed);
   const selected = listed ? normal : otherOpen ? OTHER : '';
 
   return (
@@ -40,7 +42,7 @@ export const RelationSelect: React.FC<{
         required={required}
         onChange={e => {
           const v = e.target.value;
-          setOtherOpen(v === OTHER);
+          setOtherChosen(v === OTHER);
           onChange(v === OTHER ? '' : v);
         }}
         className={`input capitalize ${className}`}

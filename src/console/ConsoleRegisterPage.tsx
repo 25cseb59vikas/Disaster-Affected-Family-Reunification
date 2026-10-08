@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle2, Search, UserPlus } from 'lucide-react';
 import { useApp, type VoiceDraft } from '../context/AppContext';
-import { VoiceCapture } from '../intake/VoiceCapture';
+import { IntakeChooser } from '../intake/IntakeChooser';
 import { DetailsForm } from '../intake/DetailsForm';
 import type { NewPerson } from '../records';
 import type { PersonRecord, RecordType } from '../types';
@@ -62,10 +62,10 @@ export const ConsoleRegisterPage: React.FC = () => {
 
   if (step.at === 'speak') {
     return (
-      <div className="max-w-4xl">
+      <div className="max-w-6xl">
         {back({ at: 'type' })}
         <h1 className="screen-title">{step.type === 'found' ? 'Person found here' : 'Looking for someone'}</h1>
-        <VoiceCapture type={step.type} onDone={draft => setStep({ at: 'details', type: step.type, draft })} />
+        <IntakeChooser type={step.type} onDone={draft => setStep({ at: 'details', type: step.type, draft })} />
       </div>
     );
   }

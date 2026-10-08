@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
-import { VoiceCapture } from '../intake/VoiceCapture';
+import { IntakeChooser } from '../intake/IntakeChooser';
 
 export const RegisterSpeakScreen: React.FC = () => {
   const { navigateTo, registrationType, setVoiceDraft } = useApp();
@@ -10,7 +10,7 @@ export const RegisterSpeakScreen: React.FC = () => {
   return (
     <Screen showBack width="wide">
       <h1 className="screen-title">{title}</h1>
-      <VoiceCapture
+      <IntakeChooser
         type={registrationType}
         onDone={draft => {
           setVoiceDraft(draft);
