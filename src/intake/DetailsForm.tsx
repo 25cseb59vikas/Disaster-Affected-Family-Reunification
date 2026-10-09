@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Mic, Sparkles, Square } from 'lucide-react';
+import { Keyboard, Mic, Sparkles, Square } from 'lucide-react';
 import type { VoiceDraft } from '../context/AppContext';
 import type { NewPerson } from '../records';
 import type { AgeBand, Gender, LookingFor, RecordType } from '../types';
 import { describePhoto, DESCRIBE_FAILED } from './describe';
 import { PhotoPicker } from './PhotoPicker';
 import { RelationSelect } from './RelationSelect';
-import { formatTimer, MAX_SECONDS, useVoiceRecorder } from './VoiceCapture';
+import { formatTimer, MAX_SECONDS, speakingGuide, useVoiceRecorder } from './VoiceCapture';
 
 const inputClass = (unsure: boolean) => `input ${unsure ? 'input-unsure' : ''}`;
 const chipClass = (on: boolean, unsure: boolean) => `chip ${on ? 'chip-on' : unsure ? 'input-unsure' : ''}`;
@@ -48,6 +48,12 @@ interface DetailsFormProps {
   /** 'family': a relative fills this in for themselves; their phone number is required. */
   variant?: 'site' | 'family';
   onSave: (person: NewPerson) => void;
+  /**
+   * Desktop register workspace: Speak / Take photo / Type in a panel on the left, the live form in a panel on
+   * the right that scrolls on its own, with `footer` (the Save button) fixed under it.
+   */
+  workspace?: boolean;
+  footer?: React.ReactNode;
 }
 
 /**
@@ -55,7 +61,7 @@ interface DetailsFormProps {
  * Phones: one column with the photo at the top. Desktop: photo, voice and transcript on the left,
  * the fields in a two-column grid on the right.
  */
-export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, variant = 'site', onSave }) => {
+export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, variant = 'site', onSave, workspace, footer }) => {
   const family = variant === 'family';
   const isFound = type === 'found';
 
@@ -178,16 +184,35 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
   const clothingUnsure = unsure('clothing_or_marks') || clothingFromPhoto;
 
   return (
-    <form id={formId} onSubmit={submit} className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-8 lg:items-start">
+    <form
+      id={formId}
+      onSubmit={submit}
+      className={
+        workspace
+          ? 'h-full min-h-0 grid grid-cols-[minmax(0,5fr)_minmax(0,8fr)] gap-5'
+          : family
+            ? '' // the family report sits beside "what happens next", so photo and voice go in a row above the fields
+            : 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-8 lg:items-start'
+      }
+    >
       {/* Left on desktop, top on phones: notice, photo, voice, what was heard. */}
-      <div className="space-y-4 mb-4 lg:mb-0 lg:sticky lg:top-0">
+      <div
+        className={
+          workspace
+            ? 'panel min-h-0 overflow-y-auto overscroll-contain p-4 flex flex-col gap-3'
+            : family
+              ? 'space-y-4 mb-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-6 lg:[&>[role=alert]]:col-span-2 lg:[&>div]:col-span-2'
+              : 'space-y-4 mb-4 lg:mb-0 lg:sticky lg:top-0'
+        }
+      >
+        {workspace && <h2 className="label-caps">Start with</h2>}
         {notice && (
           <p role="alert" className="card bg-pending-bg border-pending-border text-base font-medium text-navy">
             {notice}
           </p>
         )}
 
-        <section aria-label="Photo" className="card p-3">
+        <section aria-label="Photo" className={`card p-3 ${workspace ? 'order-2' : ''}`}>
           <PhotoPicker
             value={photo}
             onChange={(thumbnail, large) => {
@@ -205,7 +230,7 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
           {describeNote && <p className="text-sm text-urgent">{describeNote}</p>}
         </section>
 
-        <section aria-label="Add details by voice" className="card p-3 flex items-center gap-3">
+        <section aria-label="Add details by voice" className={`card p-3 flex items-center gap-3 ${workspace ? 'order-1 flex-wrap' : ''}`}>
           <button
             type="button"
             onClick={voice.toggle}
@@ -227,10 +252,31 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
                 : 'Fills the fields it hears; nothing you typed is cleared.'}
             </span>
           </span>
+          {workspace && (
+            <ol className="basis-full grid grid-cols-2 gap-x-3 gap-y-0.5 pt-2 border-t border-borderSlate text-xs text-navy">
+              {speakingGuide(type).map((item, i) => (
+                <li key={item} className="min-w-0">
+                  <span className="text-navy-muted tabular-nums">{i + 1}.</span> {item}
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
 
+        {workspace && (
+          <p className="order-3 card p-3 flex items-center gap-3 text-sm text-navy">
+            <span aria-hidden className="w-12 h-12 shrink-0 rounded-full bg-terracotta-soft text-terracotta flex items-center justify-center">
+              <Keyboard className="w-5 h-5" strokeWidth={1.75} />
+            </span>
+            <span>
+              <span className="block text-base font-medium">Type</span>
+              <span className="block text-navy-muted">Fill in the form on the right. Speaking or a photo can be added at any time.</span>
+            </span>
+          </p>
+        )}
+
         {transcript && (
-          <div className="p-3 rounded-card bg-pressed text-sm text-navy">
+          <div className={`p-3 rounded-card bg-pressed text-sm text-navy ${workspace ? 'order-4' : ''}`}>
             <span className="font-medium text-navy-muted">What was heard: </span>
             {transcript}
           </div>
@@ -238,6 +284,7 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
       </div>
 
       {/* The fields: one column on phones, a two-column grid on desktop. */}
+      <FieldsFrame workspace={workspace} footer={footer}>
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-x-6 min-w-0">
         {!isFound && <GroupHeading>The missing person</GroupHeading>}
         <TextField id="person-name" label="Name" value={name} onChange={setName} unsure={unsure('name')} />
@@ -409,6 +456,22 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
           </div>
         )}
       </div>
+      </FieldsFrame>
     </form>
   );
 };
+
+/** In the workspace the fields sit in their own panel: a short header, the scrolling fields, then the fixed footer. */
+const FieldsFrame: React.FC<{ workspace?: boolean; footer?: React.ReactNode; children: React.ReactNode }> = ({ workspace, footer, children }) =>
+  workspace ? (
+    <section aria-label="Details" className="panel min-h-0 flex flex-col">
+      <div className="flex-none px-5 py-3 border-b border-borderSlate">
+        <h2 className="text-base font-semibold text-navy">Details</h2>
+        <p className="text-xs text-navy-muted">Fields fill in as you speak or describe a photo. Check anything marked "Please check".</p>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+      {footer && <div className="flex-none px-5 py-2.5 border-t border-borderSlate bg-surface flex items-center justify-end gap-3">{footer}</div>}
+    </section>
+  ) : (
+    <>{children}</>
+  );

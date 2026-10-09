@@ -10,6 +10,39 @@ const SENTENCES: Record<Status, (desk: string) => [string, string]> = {
   found: desk => [`Found – please go to the help desk at ${desk}.`, `கண்டுபிடிக்கப்பட்டது – ${desk} உதவி மையத்திற்குச் செல்லவும்.`]
 };
 
+// The progress line: where a report is. "Received" is done as soon as the code is known.
+const STEPS = ['Received', 'Searching', 'Checking', 'Found'];
+const STEP_OF: Record<Status, number> = { searching: 1, checking: 2, found: 3 };
+
+const Progress: React.FC<{ status: Status }> = ({ status }) => {
+  const at = STEP_OF[status];
+  return (
+    <ol aria-label="Progress" className="flex items-start mb-4">
+      {STEPS.map((label, i) => {
+        const done = i < at || (status === 'found' && i === at);
+        const current = i === at;
+        return (
+          <li key={label} className="flex-1 min-w-0 flex flex-col items-center text-center relative" aria-current={current ? 'step' : undefined}>
+            {i > 0 && <span aria-hidden className={`absolute top-[11px] right-1/2 w-full h-0.5 ${i <= at ? 'bg-terracotta' : 'bg-borderSlate'}`} />}
+            <span
+              aria-hidden
+              className={`relative z-[1] w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                done ? 'bg-terracotta text-white' : current ? 'bg-surface text-terracotta ring-2 ring-terracotta' : 'bg-surface text-navy-muted ring-1 ring-borderSlate'
+              }`}
+            >
+              {done ? '✓' : i + 1}
+            </span>
+            <span className={`mt-1.5 text-xs ${current ? 'font-semibold text-navy' : 'text-navy-muted'}`}>
+              {label}
+              <span className="sr-only">{done ? ' (done)' : current ? ' (now)' : ''}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+};
+
 const STATUS_BORDER: Record<Status, string> = {
   searching: 'border-navy-muted',
   checking: 'border-pending',
@@ -61,8 +94,8 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
   const [en, ta] = result ? SENTENCES[result.status](result.help_desk ?? '') : ['', ''];
 
   return (
-    <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
-      <div>
+    <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6 lg:items-start">
+      <div className="lg:panel lg:p-5">
       <label htmlFor="record-code" className="field-label">
         Record code
       </label>
@@ -76,17 +109,18 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
         autoComplete="off"
         className="input mb-3 uppercase"
       />
-      <button type="button" onClick={() => check()} disabled={loading} className="btn-primary mb-4">
+      <button type="button" onClick={() => check()} disabled={loading} className="btn-primary mb-4 lg:mb-0">
         {loading ? 'Checking…' : 'Check status'}
       </button>
 
-      {error && <p role="alert" className="card mb-3 bg-pending-bg border-pending-border text-base text-navy">{error}</p>}
+      {error && <p role="alert" className="card mb-3 lg:mb-0 lg:mt-4 bg-pending-bg border-pending-border text-base text-navy">{error}</p>}
       </div>
 
       <div>
 
       {result && (
-        <article className="card mb-3" aria-live="polite">
+        <article className="card mb-3 lg:panel lg:p-5 lg:mb-4" aria-live="polite">
+          <Progress status={result.status} />
           <div className={`border-l-4 pl-3 space-y-1 ${STATUS_BORDER[result.status]}`}>
             <p className="text-xl font-semibold text-navy">{en}</p>
             <p className="text-lg font-semibold text-navy" lang="ta">{ta}</p>
@@ -94,7 +128,7 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
         </article>
       )}
 
-      <div className="card">
+      <div className="card lg:panel lg:p-5">
         <p className="text-sm text-navy-muted">Help desk</p>
         <p className="text-base text-navy">{result?.help_desk ? `Help desk at ${result.help_desk}` : result ? 'Any help desk can look up your code' : 'At the site where you registered'}</p>
         <p className="text-sm text-navy-muted mt-2">Helpline</p>

@@ -132,7 +132,7 @@ export const PhotoPicker: React.FC<{ value: string | null; onChange: (thumbnail:
   const takePhoto = () => (touch ? cameraRef.current?.click() : setWebcamOpen(true));
 
   const dashed =
-    'h-12 rounded-button border border-dashed border-navy-muted/40 bg-surface hover:border-navy text-navy flex items-center justify-center gap-2 text-base font-medium cursor-pointer';
+    'h-12 rounded-button border border-borderSlate bg-surface hover:border-navy text-navy flex items-center justify-center gap-2 text-base font-medium cursor-pointer';
 
   return (
     <div>

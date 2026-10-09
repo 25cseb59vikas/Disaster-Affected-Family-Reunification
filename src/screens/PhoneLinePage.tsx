@@ -690,23 +690,29 @@ export const PhoneLinePage: React.FC = () => {
     : [];
 
   return (
-    <div className="min-h-dvh bg-canvas">
-      {/* Desktop: the app frame around the call. */}
-      <header className="hidden lg:block bg-header text-white">
+    <div className="min-h-dvh bg-canvas lg:bg-dotgrid">
+      {/* Desktop: the same top bar and page heading as the family site and the console. */}
+      <header className="hidden lg:block bg-header text-white border-b border-white/10">
         <div className="mx-auto max-w-[1200px] px-8 h-14 flex items-center gap-3">
-          <a href="/" className="text-lg font-semibold rounded-badge hover:underline">
+          <a href="/" className="font-display text-lg font-semibold tracking-tight rounded-badge hover:underline">
             Reunite
           </a>
-          <span className="text-white/70">Help line</span>
-          <span className="badge bg-pending-bg text-pending border-pending-border">Simulated call – demo</span>
+          <span className="text-xs text-white/70">Help line</span>
+          <span className="ml-auto inline-flex items-center rounded-full bg-white/10 px-3 h-7 text-xs text-white/90">Simulated call – demo</span>
         </div>
       </header>
+      <div className="hidden lg:block mx-auto max-w-[1200px] px-8 pt-8">
+        <div className="pb-4 border-b border-borderSlate">
+          <h1 className="font-display text-title font-semibold tracking-tight text-navy leading-tight">Search by phone</h1>
+          <p className="mt-1 text-sm text-navy-muted">Answer a few questions by voice. What the line captures appears on the right.</p>
+        </div>
+      </div>
 
-      <div className="lg:max-w-[1200px] lg:mx-auto lg:px-8 lg:py-8 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-8 lg:items-start">
+      <div className="lg:max-w-[1200px] lg:mx-auto lg:px-8 lg:py-6 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-8 lg:items-start">
         {/* The call: the whole screen on phones, a phone-shaped card on desktop. */}
         <section
           aria-label="Call"
-          className="h-dvh flex flex-col bg-canvas lg:h-[min(780px,calc(100dvh-8rem))] lg:rounded-[32px] lg:border-[6px] lg:border-header lg:overflow-hidden lg:shadow-subtle lg:sticky lg:top-8"
+          className="h-dvh flex flex-col bg-canvas lg:h-[min(760px,calc(100dvh-13.5rem))] lg:rounded-[32px] lg:border-[6px] lg:border-header lg:overflow-hidden lg:shadow-raised lg:sticky lg:top-6"
         >
           <div className="flex-none bg-header text-white px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 flex items-center gap-2">
             <div className="flex-1 min-w-0">
@@ -924,7 +930,7 @@ export const PhoneLinePage: React.FC = () => {
           </details>
 
           {/* Desktop: what the call has captured so far, and the messages. */}
-          <section className="hidden lg:block card p-0" aria-label="Call details">
+          <section className="hidden lg:block panel" aria-label="Call details">
             <div role="tablist" aria-label="Call details" className="flex border-b border-borderSlate px-2">
               {(
                 [
@@ -938,7 +944,7 @@ export const PhoneLinePage: React.FC = () => {
                   role="tab"
                   aria-selected={sideTab === id}
                   onClick={() => setSideTab(id)}
-                  className={`min-h-[48px] px-4 text-base font-medium border-b-2 -mb-px ${
+                  className={`min-h-[44px] px-4 text-sm font-medium border-b-2 -mb-px ${
                     sideTab === id ? 'border-terracotta text-navy' : 'border-transparent text-navy-muted hover:text-navy'
                   }`}
                 >
@@ -968,7 +974,7 @@ export const PhoneLinePage: React.FC = () => {
                   </dl>
                   {extracted.length > 0 && (
                     <div className="mt-6 pt-4 border-t border-borderSlate">
-                      <h2 className="text-sm font-medium text-navy-muted mb-2">What the line understood</h2>
+                      <h2 className="label-caps mb-2">What the line understood</h2>
                       <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
                         {extracted.map(([label, value]) => (
                           <div key={label} className="min-w-0">

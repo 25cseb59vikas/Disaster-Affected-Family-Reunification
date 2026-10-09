@@ -10,21 +10,25 @@ import { RecordDetailScreen } from './screens/RecordDetailScreen';
 import { NotificationToast } from './components/Notifications';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
 import { SearchRecordsScreen } from './screens/SearchRecordsScreen';
+import { RegisterWorkspace } from './screens/RegisterWorkspace';
+import { useIsDesktop } from './useIsDesktop';
 import type { ScreenId } from './types';
 
 export const AppContent: React.FC = () => {
   const { currentScreen, navigateTo } = useApp();
+  const desktop = useIsDesktop();
 
   const renderScreen = () => {
     switch (currentScreen) {
       case 'choose_site':
         return <ChooseSiteScreen />;
+      // Desktop: the three register steps are one workspace.
       case 'register_choose_type':
-        return <RegisterChooseTypeScreen />;
+        return desktop ? <RegisterWorkspace /> : <RegisterChooseTypeScreen />;
       case 'register_speak':
-        return <RegisterSpeakScreen />;
+        return desktop ? <RegisterWorkspace /> : <RegisterSpeakScreen />;
       case 'verify_details':
-        return <VerifyDetailsScreen />;
+        return desktop ? <RegisterWorkspace useDraft /> : <VerifyDetailsScreen />;
       case 'saved':
         return <SavedScreen />;
       case 'notifications':

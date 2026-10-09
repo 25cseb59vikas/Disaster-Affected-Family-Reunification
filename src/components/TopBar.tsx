@@ -72,28 +72,31 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
   );
 };
 
-/** Desktop: Back on the left, the sync line on the right, at the top of the content area. */
+/** Desktop: the navy top bar of the workspace: back, then the sync chip and the site / role switcher. */
 export const DesktopStatusBar: React.FC<TopBarProps> = ({ showBack = false }) => {
   const { goBack, canGoBack } = useApp();
-  const { statusText, dot, canSyncNow, syncNow } = useSyncLine();
+  const { statusText, dot, syncNow } = useSyncLine();
   return (
-    <div className="hidden lg:flex flex-none h-11 items-center gap-3 px-8 bg-surface border-b border-borderSlate text-sm">
+    <div className="hidden lg:flex flex-none h-14 items-center gap-3 px-6 bg-header text-white border-b border-white/10">
       {showBack && canGoBack && (
-        <button type="button" onClick={goBack} className="-ml-2 min-h-[36px] px-2 inline-flex items-center gap-1.5 rounded-button font-medium text-navy hover:bg-pressed">
-          <ArrowLeft className="w-4 h-4" strokeWidth={1.75} />
+        <button type="button" onClick={goBack} className="-ml-2 h-9 px-2 inline-flex items-center gap-1.5 rounded-panel text-sm font-medium text-white/90 hover:bg-white/10">
+          <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
           Back
         </button>
       )}
       <span className="flex-1" />
-      <span aria-hidden className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-      <span className="text-navy-muted" aria-live="polite">
-        {statusText}
-      </span>
-      {canSyncNow && (
-        <button type="button" onClick={() => syncNow()} className="min-h-[36px] px-2 rounded-button font-medium text-civilBlue hover:bg-civilBlue-soft">
-          Sync now
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => syncNow()}
+        title="Sync now"
+        className="h-9 px-3 inline-flex items-center gap-2 rounded-full bg-white/10 text-sm text-white/90 hover:bg-white/15 motion-safe:transition-[background-color] motion-safe:duration-150"
+      >
+        <span aria-hidden className={`w-2 h-2 rounded-full ${dot}`} />
+        <span aria-live="polite" className="tabular-nums">
+          {statusText}
+        </span>
+      </button>
+      <SwitchMenu />
     </div>
   );
 };
