@@ -15,6 +15,9 @@ import '@fontsource/inter/600.css';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
 import './index.css';
+import { refreshSites } from './sites';
+void refreshSites();
+window.setInterval(() => { void refreshSites(); }, 15000);
 
 function Root() {
   const path = location.pathname;

@@ -7,7 +7,8 @@ from . import store
 # Officer sites. A pair needs a confirmation from each officer site where its two records were registered
 # (one site when both are at the same site). The authority desk can register people and accept a match;
 # its acceptance counts only when neither record is at an officer site. Same rule as requiredSites() in the app.
-OFFICER_SITES = {"camp-a", "hospital-b"}
+from .sites import physical_site_ids, list_sites
+OFFICER_SITES = {"camp-a", "hospital-b"}  # legacy default for callers
 SITE_NAMES = {"camp-a": "Camp A", "hospital-b": "Hospital B", "authority": "Authority desk"}
 
 router = APIRouter()
@@ -15,8 +16,8 @@ router = APIRouter()
 
 def required_sites(found: dict | None, seeking: dict | None) -> set[str]:
     if found is None or seeking is None:
-        return set(OFFICER_SITES)
-    sites = {found.get("site"), seeking.get("site")} & OFFICER_SITES
+        return physical_site_ids()
+    sites = {found.get("site"), seeking.get("site")} & physical_site_ids()
     return sites or {"authority"}
 
 
@@ -53,7 +54,7 @@ def family_status(code: str):
     for (found_id, seeking_id), events in pairs.items():
         if verified(events, required_sites(by_id.get(found_id), by_id.get(seeking_id))):
             found = by_id.get(found_id, record)
-            return {"status": "found", "help_desk": SITE_NAMES.get(found["site"], found["site"])}
+            return {"status": "found", "help_desk": next((s["name"] for s in list_sites() if s["id"] == found["site"]), found["site"])}
 
     ruled_out = {k for k, evs in pairs.items() if any(e["kind"] == "rule_out" for e in evs)}
     checking = any(s[side] == rid and (s["found_id"], s["seeking_id"]) not in ruled_out

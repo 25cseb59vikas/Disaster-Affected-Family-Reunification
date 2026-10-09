@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { refreshSites } from '../sites';
 
 interface ServerCounts {
   records: number;
@@ -19,6 +20,19 @@ export const SettingsPage: React.FC = () => {
   const [busy, setBusy] = useState<Action | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [message, setMessage] = useState('');
+  const [sites, setSites] = useState<Array<{id:string; name:string; type:string; active:boolean}>>([]);
+  const [newSite, setNewSite] = useState('');
+  const [siteType, setSiteType] = useState('camp');
+  const loadSites = async () => {
+    try { const res = await fetch('/api/sites'); if (res.ok) setSites((await res.json()).sites); } catch { setMessage('Cannot load sites while offline.'); }
+  };
+  const saveSite = async (url: string, method: string, data: object) => {
+    try {
+      const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadSites(); await refreshSites(); setNewSite(''); setMessage('Sites updated.');
+    } catch { setMessage('Could not update site. Check the server.'); }
+  };
 
   const refresh = () =>
     fetch('/api/sim/state', { signal: AbortSignal.timeout(5000) })
@@ -28,6 +42,7 @@ export const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     refresh();
+    void loadSites();
   }, []);
 
   const run = async (action: Action) => {
@@ -61,6 +76,22 @@ export const SettingsPage: React.FC = () => {
     <div className="max-w-3xl">
       <h1 className="screen-title">Settings</h1>
 
+      <section className="card mb-6">
+        <h2 className="text-lg font-semibold text-navy">Sites</h2>
+        <p className="text-sm text-navy-muted mt-1">Physical sites can confirm matches. Inactive sites remain on historical records.</p>
+        <div className="mt-3 space-y-2">{sites.map(s => <div key={s.id} className="flex flex-wrap gap-2 items-center">
+          <span className="flex-1">{s.name} · {s.type} · {s.active ? 'Active' : 'Inactive'}</span>
+          <button className="btn-text" type="button" onClick={() => { const name = prompt('Rename site', s.name); if (name && name.trim() !== s.name) void saveSite(`/api/sites/${s.id}`, 'PATCH', {name}); }}>Rename</button>
+          {s.active && <button className="btn-text" type="button" onClick={() => { if (confirm(`Deactivate ${s.name}?`)) void saveSite(`/api/sites/${s.id}`, 'PATCH', {active:false}); }}>Deactivate</button>}
+        </div>)}</div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          <input className="input flex-1" aria-label="New site name" placeholder="Camp C" value={newSite} onChange={e=>setNewSite(e.target.value)} />
+          <select className="input" aria-label="Site type" value={siteType} onChange={e=>setSiteType(e.target.value)}>
+            {['camp','hospital','relief centre','other'].map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
+          <button type="button" className="btn-primary" disabled={!newSite.trim()} onClick={()=>void saveSite('/api/sites','POST',{name:newSite,type:siteType})}>Add site</button>
+        </div>
+      </section>
       <section className="card">
         <h2 className="text-lg font-semibold text-navy">Demo data</h2>
         <p className="text-base text-navy mt-1" aria-live="polite">

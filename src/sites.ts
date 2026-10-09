@@ -1,10 +1,26 @@
 import type { SiteId } from './types';
 
 // Officer sites. Every one of them confirms a match; the phone line is not one of them.
-export const SITES: Array<{ id: SiteId; name: string; helper: string; codePrefix: string }> = [
-  { id: 'camp-a', name: 'Camp A', helper: 'Relief camp', codePrefix: 'A' },
-  { id: 'hospital-b', name: 'Hospital B', helper: 'Hospital', codePrefix: 'B' }
+export interface PhysicalSite { id: SiteId; name: string; helper: string; codePrefix: string; type: string; active: boolean }
+export const SITES: PhysicalSite[] = [
+  { id: 'camp-a', name: 'Camp A', helper: 'Camp', codePrefix: 'A', type: 'camp', active: true },
+  { id: 'hospital-b', name: 'Hospital B', helper: 'Hospital', codePrefix: 'B', type: 'hospital', active: true }
 ];
+
+/** Update the shared site registry in place, so existing filters and match checks see new sites. */
+export async function refreshSites(): Promise<void> {
+  try {
+    const response = await fetch('/api/sites', { signal: AbortSignal.timeout(5000), cache: 'no-store' });
+    if (!response.ok) return;
+    const body = await response.json() as { sites: Array<{id: string; name: string; type: string; active: boolean}> };
+    if (!Array.isArray(body.sites)) return;
+    SITES.splice(0, SITES.length, ...body.sites.map(s => ({
+      ...s, helper: s.type, codePrefix: s.id === 'camp-a' ? 'A' : s.id === 'hospital-b' ? 'B' : 'X'
+    })));
+    window.dispatchEvent(new Event('reunite:sites-updated'));
+  } catch { /* offline: retain last known sites */ }
+}
+
 
 export const PHONE_LINE = { id: 'phone-line' as SiteId, name: 'Phone line', codePrefix: 'P' };
 // The authority console registers at its own desk and can endorse matches, but is not one of the two officer sites.

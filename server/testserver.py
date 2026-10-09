@@ -13,12 +13,14 @@ def make_app():
     """Builds the app. REUNITE_DB must be set before this is called (store reads it on import)."""
     from fastapi import FastAPI
 
+    from .sites import router as sites_router
     from .status import router as status_router
     from .sync import demo_epoch, router as sync_router
 
     app = FastAPI()
     app.include_router(sync_router)
     app.include_router(status_router)
+    app.include_router(sites_router)
 
     @app.get("/health")
     def health():

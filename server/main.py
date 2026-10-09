@@ -35,6 +35,7 @@ if os.name == "nt":
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
+from .sites import router as sites_router
 from .status import router as status_router
 from .sync import demo_epoch, router as sync_router
 
@@ -163,6 +164,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 app.include_router(sync_router)
 app.include_router(status_router)
+app.include_router(sites_router)
 
 
 def empty_fields() -> dict:

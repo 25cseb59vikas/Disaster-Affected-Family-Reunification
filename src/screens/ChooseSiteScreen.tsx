@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
-import { SITES } from '../sites';
+import { SITES, refreshSites } from '../sites';
 import type { SiteId } from '../types';
 import { switchRole } from '../role';
 import { InstallButton } from '../components/InstallButton';
@@ -11,12 +11,20 @@ export const ChooseSiteScreen: React.FC = () => {
   const [selected, setSelected] = useState<SiteId>(site);
   const [name, setName] = useState<string>(volunteerName);
   const [error, setError] = useState('');
+  const [, rerender] = useState(0);
+  useEffect(() => {
+    const update = () => rerender(n => n + 1);
+    window.addEventListener('reunite:sites-updated', update);
+    void refreshSites();
+    return () => window.removeEventListener('reunite:sites-updated', update);
+  }, []);
 
   const handleContinue = () => {
     if (!name.trim()) {
       setError('Enter your name so records show who registered them.');
       return;
     }
+    if (!SITES.some(s => s.id === selected && s.active)) { setError('Select an active site.'); return; }
     chooseSite(selected, name.trim());
   };
 
@@ -33,7 +41,7 @@ export const ChooseSiteScreen: React.FC = () => {
       <h1 className="screen-title pt-4">Where are you working?</h1>
 
       <div className="grid gap-3 md:grid-cols-2 mb-6 [&>*]:min-w-0" role="radiogroup" aria-label="Site">
-        {SITES.map(s => {
+        {SITES.filter(s => s.active).map(s => {
           const isOn = selected === s.id;
           return (
             <button

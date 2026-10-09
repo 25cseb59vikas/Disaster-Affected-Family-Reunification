@@ -13,7 +13,7 @@ export type ScreenId =
 
 // Officer sites: camp-a, hospital-b. The others register records but never count as a site confirmation:
 // phone-line (simulated phone registrations), authority (the console's desk), family-app (families on their own phone).
-export type SiteId = 'camp-a' | 'hospital-b' | 'phone-line' | 'authority' | 'family-app';
+export type SiteId = string;
 export type RecordType = 'found' | 'seeking';
 export type Gender = 'male' | 'female' | 'other' | 'unknown';
 export type AgeBand = 'Under 12' | '12–18' | '19–59' | '60+';
