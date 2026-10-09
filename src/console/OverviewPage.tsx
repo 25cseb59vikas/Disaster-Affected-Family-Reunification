@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES } from '../sites';
 import type { SiteId } from '../types';
 import { linkProps } from '../route';
-import { useConsoleData, type ConsoleData } from './data';
+import { useConsoleData, type ConsoleData } from '../workspace/data';
 
 const ROWS: Array<{ id: SiteId; name: string }> = [...SITES, PHONE_LINE, FAMILY_APP, AUTHORITY];
 

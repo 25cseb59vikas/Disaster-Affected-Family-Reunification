@@ -615,7 +615,7 @@ export const PhoneLinePage: React.FC = () => {
       db.records.toArray()
     ]);
     if (!r) return [];
-    const { status, suggestion } = recordStatus(r.id, suggestions, eventsByPair(events));
+    const { status, suggestion } = recordStatus(r.id, suggestions, eventsByPair(events), new Map(records.map(x => [x.id, x])));
     const out = [`Reunite (demo): We have registered your search. Your reference is ${r.code}.`];
     if (status !== 'Searching') out.push(`Reunite (demo): A possible match is being checked. Reference ${r.code}.`);
     if (status === 'Found' && suggestion) {

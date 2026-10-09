@@ -4,7 +4,7 @@ import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES, siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
 import type { PersonRecord } from '../types';
 import { go, linkProps, useRoute } from '../route';
-import { useConsoleData } from './data';
+import { useConsoleData } from '../workspace/data';
 import { useIsDesktop } from '../useIsDesktop';
 import { RecordPanel } from './RecordPage';
 
@@ -45,7 +45,7 @@ export const RecordsPage: React.FC = () => {
 
   const q = query.trim().toLowerCase();
   const rows = (data?.records ?? [])
-    .map(r => ({ r, status: recordStatus(r.id, data!.suggestions, data!.events).status }))
+    .map(r => ({ r, status: recordStatus(r.id, data!.suggestions, data!.events, data!.byId).status }))
     .filter(({ r, status: st }) => (!site || r.site === site) && (!type || r.type === type) && (!status || st === status))
     .filter(({ r }) => !q || [r.name, r.code, r.village, r.relative_name, r.contact_phone, r.clothing_marks].some(v => v?.toLowerCase().includes(q)));
 

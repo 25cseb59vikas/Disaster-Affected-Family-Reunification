@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useApp } from '../context/AppContext';
-import { eventsByPair, pairState, type PairState } from '../matchStatus';
+import { eventsByPair, pairState, requiredFor, type PairState } from '../matchStatus';
 import type { MatchEvent, PersonRecord, Suggestion } from '../types';
 
 export interface ConsoleData {
@@ -21,12 +21,13 @@ export function useConsoleData(): ConsoleData | undefined {
       db.events.toArray()
     ]);
     const byPair = eventsByPair(events);
+    const byId = new Map(records.map(r => [r.id, r]));
     return {
       records,
-      byId: new Map(records.map(r => [r.id, r])),
+      byId,
       suggestions,
       events: byPair,
-      states: new Map(suggestions.map(s => [s.id, pairState(byPair.get(s.id) ?? [])]))
+      states: new Map(suggestions.map(s => [s.id, pairState(byPair.get(s.id) ?? [], requiredFor(s.id, byId))]))
     };
   }, [db]);
 }

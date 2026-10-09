@@ -11,8 +11,8 @@ export const RecordDetailScreen: React.FC = () => {
   const { db, selectedRecordId, navigateTo, setSelectedSuggestionId } = useApp();
   const data = useLiveQuery(async () => {
     if (!selectedRecordId) return null;
-    const [r, suggestions, events] = await Promise.all([db.records.get(selectedRecordId), db.suggestions.toArray(), db.events.toArray()]);
-    return r ? { r, ...recordStatus(r.id, suggestions, eventsByPair(events)) } : null;
+    const [r, suggestions, events, records] = await Promise.all([db.records.get(selectedRecordId), db.suggestions.toArray(), db.events.toArray(), db.records.toArray()]);
+    return r ? { r, ...recordStatus(r.id, suggestions, eventsByPair(events), new Map(records.map(x => [x.id, x]))) } : null;
   }, [db, selectedRecordId]);
 
   if (!data) {
@@ -96,8 +96,8 @@ export const RecordDetailScreen: React.FC = () => {
 export const RecordSummary: React.FC<{ id: string }> = ({ id }) => {
   const { db, navigateTo, setSelectedSuggestionId } = useApp();
   const data = useLiveQuery(async () => {
-    const [r, suggestions, events] = await Promise.all([db.records.get(id), db.suggestions.toArray(), db.events.toArray()]);
-    return r ? { r, ...recordStatus(r.id, suggestions, eventsByPair(events)) } : null;
+    const [r, suggestions, events, records] = await Promise.all([db.records.get(id), db.suggestions.toArray(), db.events.toArray(), db.records.toArray()]);
+    return r ? { r, ...recordStatus(r.id, suggestions, eventsByPair(events), new Map(records.map(x => [x.id, x]))) } : null;
   }, [db, id]);
   if (!data) return data === null ? <p className="card text-base text-navy-muted">Record not found.</p> : null;
 

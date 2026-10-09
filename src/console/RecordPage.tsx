@@ -4,7 +4,7 @@ import { recordStatus } from '../matchStatus';
 import { siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
 import { linkProps } from '../route';
-import { personLabel, useConsoleData, type ConsoleData } from './data';
+import { personLabel, useConsoleData, type ConsoleData } from '../workspace/data';
 import type { PersonRecord } from '../types';
 import { PAIR_STATUS } from './MatchQueuePage';
 import { STATUS_BADGE, statusLabel, Thumb } from './RecordsPage';
@@ -32,7 +32,7 @@ export function recordRows(r: PersonRecord): Array<[string, string | null | unde
 export const RecordPanel: React.FC<{ id: string; data: ConsoleData }> = ({ id, data }) => {
   const r = data.byId.get(id);
   if (!r) return <p className="card text-base text-navy-muted">Record not found.</p>;
-  const { status } = recordStatus(r.id, data.suggestions, data.events);
+  const { status } = recordStatus(r.id, data.suggestions, data.events, data.byId);
   const pairs = data.suggestions.filter(s => s.found_id === r.id || s.seeking_id === r.id).sort((a, b) => b.score - a.score);
   return (
     <article aria-label="Record" className="space-y-3">
@@ -105,7 +105,7 @@ export const RecordPage: React.FC<{ id: string }> = ({ id }) => {
     );
   }
 
-  const { status } = recordStatus(r.id, data.suggestions, data.events);
+  const { status } = recordStatus(r.id, data.suggestions, data.events, data.byId);
   const seeking = r.type === 'seeking';
   const rows = recordRows(r);
   const pairs = data.suggestions.filter(s => s.found_id === r.id || s.seeking_id === r.id).sort((a, b) => b.score - a.score);

@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { pairState, type PairStatus } from '../matchStatus';
+import { pairState, requiredFor, type PairStatus } from '../matchStatus';
 import { siteName } from '../sites';
 import type { PersonRecord, Suggestion } from '../types';
 import { go, useRoute } from '../route';
 import { useIsDesktop, useMediaQuery } from '../useIsDesktop';
-import { useConsoleData, type ConsoleData } from './data';
-import { EvidencePanel, MATCH_NOTICE } from './EvidencePanel';
+import { useConsoleData, type ConsoleData } from '../workspace/data';
+import { EvidencePanel, MATCH_NOTICE } from '../workspace/EvidencePanel';
 import { useScope, SCOPE_SITES } from './scope';
-import { Avatar, Drawer, EmptyState, HeaderCount, PageHeader, PAIR_PILL, ScoreBar, SkeletonRows, StatusPill } from './ui';
+import { Drawer, EmptyState, HeaderCount, PageHeader, PAIR_PILL, ScoreBar, SkeletonRows, StatusPill } from '../workspace/ui';
 
 export { MATCH_NOTICE };
 
@@ -52,8 +52,7 @@ export const MatchQueuePage: React.FC = () => {
   const desktop = useIsDesktop();
   // 1280px and up: table and evidence side by side. 1024-1279px: the table alone, evidence in a slide-over.
   const split = useMediaQuery('(min-width: 1280px)');
-  const roomy = useMediaQuery('(min-width: 1536px)');
-  const extra = desktop && (!split || roomy); // separate Strength and Sites columns when the table has room
+  const extra = desktop && !split; // the full-width table (1024-1279px) has room for Strength and Sites columns
   const { site, setSite } = useScope();
   const [query, setQuery] = useState('');
   const [strength, setStrength] = useState<'' | 'Strong' | 'Possible'>('');
@@ -69,7 +68,7 @@ export const MatchQueuePage: React.FC = () => {
       if (data.states.has(pid) || !evs.some(e => e.kind === 'rule_out')) continue;
       const [found_id, seeking_id] = pid.split(':');
       const s: Suggestion = { id: pid, found_id, seeking_id, score: -1, band: 'Possible', ambiguous: false, reasons_for: [], reasons_against: [], unknown: [], ask_next: null };
-      all.push({ s, status: pairState(evs).status, found: data.byId.get(found_id), seeking: data.byId.get(seeking_id) });
+      all.push({ s, status: pairState(evs, requiredFor(pid, data.byId)).status, found: data.byId.get(found_id), seeking: data.byId.get(seeking_id) });
     }
   }
   const q = query.trim().toLowerCase();
@@ -135,18 +134,19 @@ export const MatchQueuePage: React.FC = () => {
   return (
     <>
       <PageHeader
+        compact
         title="Match queue"
-        description="Suggested pairs of a person found at a site and a family's search, strongest first. Review the evidence, then accept or reject."
+        description="Suggested pairs, strongest first. Review the evidence, then accept or reject."
         aside={
-          <div className="flex gap-6">
-            <HeaderCount value={data ? counts.decide : '–'} label="Need a decision" />
-            <HeaderCount value={data ? counts.verified : '–'} label="Verified" />
-            <HeaderCount value={data ? counts.rejected : '–'} label="Rejected" />
+          <div className="flex flex-wrap gap-x-5 gap-y-1">
+            <HeaderCount inline value={data ? counts.decide : '–'} label="need a decision" />
+            <HeaderCount inline value={data ? counts.verified : '–'} label="verified" />
+            <HeaderCount inline value={data ? counts.rejected : '–'} label="rejected" />
           </div>
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2 mb-4" role="toolbar" aria-label="Filter matches">
+      <div className="flex-none flex flex-wrap items-center gap-2 mb-3" role="toolbar" aria-label="Filter matches">
         <label htmlFor="match-search" className="sr-only">
           Search by name or code
         </label>
@@ -198,17 +198,18 @@ export const MatchQueuePage: React.FC = () => {
       </div>
 
       {desktop ? (
-        <div className={split ? 'grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-6 items-start' : ''}>
-          <div className="panel">
+        // Only the two panes scroll: the list on its own, the evidence body inside its panel.
+        <div className={`flex-1 min-h-0 ${split ? 'grid grid-cols-[minmax(0,38fr)_minmax(0,62fr)] gap-5' : ''}`}>
+          <div className="panel h-full overflow-y-auto overscroll-contain">
             <table className="w-full text-table text-left table-fixed tabular-nums">
               <thead>
-                <tr className="[&>th]:sticky [&>th]:top-14 [&>th]:z-10 [&>th]:bg-surface [&>th]:h-10 [&>th]:px-3 [&>th]:text-label [&>th]:uppercase [&>th]:text-navy-muted [&>th]:font-medium [&>th]:border-b [&>th]:border-borderSlate">
-                  <th className="w-[84px] rounded-tl-panel">Score</th>
+                <tr className="[&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-surface [&>th]:h-10 [&>th]:px-3 [&>th]:text-label [&>th]:uppercase [&>th]:text-navy-muted [&>th]:font-medium [&>th]:border-b [&>th]:border-borderSlate">
+                  <th className="w-[84px] rounded-tl-panel !px-2.5">Score</th>
                   <th className={`${extra ? '' : 'hidden'} w-[84px]`}>Strength</th>
                   <th>Found person</th>
                   <th>Searching family</th>
                   <th className={`${extra ? '' : 'hidden'} w-[150px]`}>Sites</th>
-                  <th className="w-[152px] rounded-tr-panel">Status</th>
+                  <th className={`${extra ? 'w-[152px]' : 'w-[108px]'} rounded-tr-panel !px-2.5`}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,33 +230,31 @@ export const MatchQueuePage: React.FC = () => {
                         on ? 'bg-terracotta-soft/50 shadow-edge-accent' : 'hover:bg-canvas'
                       }`}
                     >
-                      <td className="px-3">
+                      <td className="px-2.5 py-2 align-top">
                         <ScoreBar score={r.s.score} />
                         <span className={`${extra ? 'hidden' : ''} block text-xs text-navy-muted`}>{r.s.score < 0 ? 'Not suggested' : r.s.ambiguous ? 'Ambiguous' : r.s.band}</span>
                       </td>
                       <td className={`${extra ? '' : 'hidden'} px-3 text-navy`}>{r.s.score < 0 ? '–' : r.s.ambiguous ? 'Ambiguous' : r.s.band}</td>
-                      <td className="px-3 py-1.5">
-                        <span className="flex items-center gap-2 min-w-0">
-                          <Avatar name={r.found?.name} />
-                          <span className="min-w-0">
-                            <span className="block font-medium text-navy truncate">{r.found ? r.found.name ?? 'Name not known' : 'Not synced yet'}</span>
-                            <span className={`${extra ? 'hidden' : ''} block text-xs text-navy-muted truncate`}>{siteName(r.found?.site ?? '')}</span>
-                          </span>
+                      {/* Names wrap to two lines (full name in the tooltip); the site sits on the line under. */}
+                      <td className="px-3 py-2 align-top" title={r.found?.name ?? undefined}>
+                        <span className="block font-medium text-navy leading-snug line-clamp-2 break-words">
+                          {r.found ? r.found.name ?? 'Name not known' : 'Not synced yet'}
                         </span>
+                        <span className={`${extra ? 'hidden' : ''} block text-xs text-navy-muted`}>{siteName(r.found?.site ?? '')}</span>
                       </td>
-                      <td className="px-3 py-1.5 min-w-0">
-                        <span className="block text-navy truncate">{searchingFamily(r.seeking)}</span>
-                        <span className="block text-xs text-navy-muted truncate">
-                          for {r.seeking?.name ?? 'name not known'}
-                          <span className={`${extra ? 'hidden' : ''}`}>, {siteName(r.seeking?.site ?? '')}</span>
+                      <td className="px-3 py-2 align-top" title={`${searchingFamily(r.seeking)}, for ${r.seeking?.name ?? 'name not known'}`}>
+                        <span className="block text-navy leading-snug line-clamp-2 break-words">{searchingFamily(r.seeking)}</span>
+                        <span className="block text-xs text-navy-muted leading-snug">
+                          <span className={extra ? '' : 'hidden'}>for {r.seeking?.name ?? 'name not known'}</span>
+                          <span className={extra ? 'hidden' : ''}>{siteName(r.seeking?.site ?? '')}</span>
                         </span>
                       </td>
                       <td className={`${extra ? '' : 'hidden'} px-3 text-navy-muted`}>
                         <span className="block truncate">{siteName(r.found?.site ?? '')}</span>
                         <span className="block truncate">{siteName(r.seeking?.site ?? '')}</span>
                       </td>
-                      <td className="px-3">
-                        <StatusPill status={r.status} />
+                      <td className="px-2.5 py-2 align-top">
+                        <StatusPill status={r.status} wrap={!extra} />
                       </td>
                     </tr>
                   );
@@ -266,7 +265,7 @@ export const MatchQueuePage: React.FC = () => {
             {empty}
           </div>
           {split ? (
-          <div className="sticky top-[calc(3.5rem+1.5rem)] h-[calc(100dvh-3.5rem-3rem)] min-h-[420px]">
+          <div className="h-full min-h-0">
             {data && selected ? (
               <EvidencePanel key={selected} id={selected} data={data} />
             ) : (

@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Screen } from '../components/Screen';
 import { SITES, siteName } from '../sites';
-import { eventsByPair, pairState } from '../matchStatus';
+import { eventsByPair, pairState, requiredFor } from '../matchStatus';
 import type { PersonRecord, SiteId, Suggestion } from '../types';
 import { useIsDesktop } from '../useIsDesktop';
 import { DesktopList } from '../components/DesktopList';
@@ -27,7 +27,7 @@ export interface Case {
 // site = null: every site (the authority console).
 export function buildCases(site: SiteId | null, records: PersonRecord[], suggestions: Suggestion[], events: ReturnType<typeof eventsByPair>) {
   const byId = new Map(records.map(r => [r.id, r]));
-  const states = new Map(suggestions.map(s => [s.id, pairState(events.get(s.id) ?? [])]));
+  const states = new Map(suggestions.map(s => [s.id, pairState(events.get(s.id) ?? [], requiredFor(s.id, byId))]));
   const reunited = new Set<string>();
   const bestFor = new Map<string, Suggestion>();
   for (const s of suggestions) {

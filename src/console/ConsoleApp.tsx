@@ -6,9 +6,9 @@ import { switchRole } from '../role';
 import { DemoNotice } from '../components/DemoNotice';
 import { InstallButton } from '../components/InstallButton';
 import { go, linkProps, useRoute } from '../route';
-import { CloseButton, Drawer } from './ui';
+import { CloseButton, Drawer } from '../workspace/ui';
 import { ConsoleScope, SCOPE_KEY, SCOPE_SITES, storedScope } from './scope';
-import { useConsoleData } from './data';
+import { useConsoleData } from '../workspace/data';
 import { OverviewPage } from './OverviewPage';
 import { MatchQueuePage } from './MatchQueuePage';
 import { ConsolePriorityPage } from './ConsolePriorityPage';
@@ -269,6 +269,7 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
     }
   };
 
+  const fill = path.startsWith('/console/matches') || path.startsWith('/console/priority');
   let page: React.ReactNode;
   if (path.startsWith('/console/matches')) page = <MatchQueuePage />;
   else if (path.startsWith('/console/priority')) page = <ConsolePriorityPage />;
@@ -280,7 +281,7 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
 
   return (
     <ConsoleScope.Provider value={{ site, setSite: chooseSite }}>
-      <div className="min-h-dvh bg-dotgrid lg:pl-sidebar-rail xl:pl-sidebar">
+      <div className="min-h-dvh bg-dotgrid lg:pl-sidebar-rail xl:pl-sidebar lg:h-dvh lg:flex lg:flex-col">
         {/* Sidebar: icons only at 1024–1279px, full from 1280px; a drawer below 1024px. */}
         <aside className="hidden lg:block fixed inset-y-0 left-0 z-30 lg:w-sidebar-rail xl:w-sidebar">
           <SidebarNav rail officer={officer} onChangeOfficer={onChangeOfficer} />
@@ -294,7 +295,7 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
           </div>
         </Drawer>
 
-        <header className="sticky top-0 z-20 h-14 bg-header text-white flex items-center gap-2 lg:gap-3 px-2 lg:px-6 border-b border-white/10">
+        <header className="sticky top-0 z-20 flex-none h-14 bg-header text-white flex items-center gap-2 lg:gap-3 px-2 lg:px-6 border-b border-white/10">
           <button
             type="button"
             onClick={() => setNavOpen(true)}
@@ -349,8 +350,16 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
           <SyncChip />
         </header>
 
-        <main className="w-full max-w-[1600px] mx-auto px-4 lg:px-8 py-6 lg:py-8">{page}</main>
-        <DemoNotice />
+        {/* Desktop: the shell is exactly the window height. Work pages (match queue, priority) never scroll
+            as a page; their panes scroll on their own. Other pages scroll inside this area. */}
+        <main
+          className={`w-full max-w-[1600px] mx-auto px-4 lg:px-8 py-6 lg:flex-1 lg:min-h-0 ${
+            fill ? 'lg:overflow-hidden lg:flex lg:flex-col lg:pt-4 lg:pb-3' : 'lg:overflow-y-auto lg:py-8'
+          }`}
+        >
+          {page}
+        </main>
+        <DemoNotice className="lg:flex-none lg:py-1.5" />
       </div>
     </ConsoleScope.Provider>
   );

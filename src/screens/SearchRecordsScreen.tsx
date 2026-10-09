@@ -36,7 +36,7 @@ export const SearchRecordsScreen: React.FC = () => {
       db.suggestions.toArray(),
       db.events.toArray()
     ]);
-    return { records, suggestions, events: eventsByPair(events) };
+    return { records, byId: new Map(records.map(r => [r.id, r])), suggestions, events: eventsByPair(events) };
   }, [db]);
 
   const q = query.trim().toLowerCase();
@@ -95,7 +95,7 @@ export const SearchRecordsScreen: React.FC = () => {
           head={here ? ['', 'Person', 'Code', 'Status'] : ['Missing person', 'Registered', 'Status']}
           cols={here ? 'grid-cols-[48px_minmax(0,1fr)_88px_auto]' : 'grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]'}
           rows={shown.map(r => {
-            const { status } = recordStatus(r.id, data!.suggestions, data!.events);
+            const { status } = recordStatus(r.id, data!.suggestions, data!.events, data!.byId);
             const badge = <span key="status" className={`badge ${STATUS_BADGE[status]}`}>{here && status === 'Searching' ? 'No match yet' : status}</span>;
             return {
               key: r.id,
@@ -145,7 +145,7 @@ export const SearchRecordsScreen: React.FC = () => {
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
         {shown.map(r => {
-          const { status } = recordStatus(r.id, data!.suggestions, data!.events);
+          const { status } = recordStatus(r.id, data!.suggestions, data!.events, data!.byId);
           return (
             <button
               type="button"

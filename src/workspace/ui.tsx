@@ -32,11 +32,11 @@ export const PAIR_PILL: Record<PairStatus, { label: string; tone: string; dot: s
   ruled_out: { label: 'Rejected', tone: 'bg-urgent-bg text-urgent', dot: 'bg-urgent' }
 };
 
-export const StatusPill: React.FC<{ status: PairStatus }> = ({ status }) => {
+export const StatusPill: React.FC<{ status: PairStatus; wrap?: boolean }> = ({ status, wrap }) => {
   const p = PAIR_PILL[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${p.tone}`}>
-      <span aria-hidden className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${wrap ? 'leading-tight' : 'whitespace-nowrap'} ${p.tone}`}>
+      <span aria-hidden className={`w-1.5 h-1.5 shrink-0 rounded-full ${p.dot}`} />
       {p.label}
     </span>
   );
@@ -52,26 +52,51 @@ export const ScoreBar: React.FC<{ score: number }> = ({ score }) => (
   </span>
 );
 
-/** Title, one line of description, and anything that belongs on the right (counts, actions). */
-export const PageHeader: React.FC<{ title: string; description: string; aside?: React.ReactNode }> = ({ title, description, aside }) => (
-  <header className="bg-topo-light -mx-4 lg:-mx-8 -mt-6 lg:-mt-8 mb-6 px-4 lg:px-8 pt-6 lg:pt-8 pb-6 border-b border-borderSlate">
-    <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-      <div className="min-w-0 max-w-2xl">
-        <h1 className="font-display text-title font-semibold text-navy [text-wrap:balance]">{title}</h1>
-        <p className="mt-1.5 text-sm text-navy-muted [text-wrap:pretty]">{description}</p>
+/**
+ * Title, one line of description, and anything that belongs on the right (counts, actions).
+ * `compact`: one band for full-height work pages (match queue, priority), so the panes get the height.
+ */
+export const PageHeader: React.FC<{ title: string; description: string; aside?: React.ReactNode; compact?: boolean }> = ({
+  title,
+  description,
+  aside,
+  compact
+}) =>
+  compact ? (
+    <header className="flex-none bg-topo-light -mx-4 lg:-mx-8 -mt-6 lg:-mt-4 mb-3 px-4 lg:px-8 pt-6 lg:pt-2.5 pb-4 lg:pb-2.5 border-b border-borderSlate">
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
+        <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h1 className="font-display text-title font-semibold text-navy">{title}</h1>
+          <p className="text-sm text-navy-muted [text-wrap:pretty] max-w-xl">{description}</p>
+        </div>
+        {aside}
       </div>
-      {aside}
-    </div>
-  </header>
-);
+    </header>
+  ) : (
+    <header className="bg-topo-light -mx-4 lg:-mx-8 -mt-6 lg:-mt-8 mb-6 px-4 lg:px-8 pt-6 lg:pt-8 pb-6 border-b border-borderSlate">
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <div className="min-w-0 max-w-2xl">
+          <h1 className="font-display text-title font-semibold text-navy [text-wrap:balance]">{title}</h1>
+          <p className="mt-1.5 text-sm text-navy-muted [text-wrap:pretty]">{description}</p>
+        </div>
+        {aside}
+      </div>
+    </header>
+  );
 
 /** A labelled number for page headers: Space Grotesk for the value, an uppercase label under it. */
-export const HeaderCount: React.FC<{ value: number | string; label: string }> = ({ value, label }) => (
+export const HeaderCount: React.FC<{ value: number | string; label: string; inline?: boolean }> = ({ value, label, inline }) =>
+  inline ? (
+    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className="font-display text-xl font-semibold text-navy tabular-nums">{value}</span>
+      <span className="text-xs text-navy-muted">{label}</span>
+    </div>
+  ) : (
   <div className="min-w-[88px]">
     <p className="font-display text-xl font-semibold text-navy tabular-nums">{value}</p>
     <p className="label-caps mt-0.5">{label}</p>
   </div>
-);
+  );
 
 /** One clear sentence and, if useful, one next step. */
 export const EmptyState: React.FC<{ title: string; hint: string; action?: React.ReactNode }> = ({ title, hint, action }) => (

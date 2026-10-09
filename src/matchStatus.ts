@@ -1,8 +1,27 @@
-import type { MatchEvent, SiteId, Suggestion } from './types';
-import { SITES } from './sites';
+import type { MatchEvent, PersonRecord, SiteId, Suggestion } from './types';
+import { AUTHORITY, SITES } from './sites';
 
 /**
- * open → partly_confirmed (one site) → confirmed (both officers) → verified (family answer matches).
+ * The officer sites that must confirm a pair: the sites where its two records were registered
+ * (one site when both are at the same site). Records from the phone line or family app have no officer;
+ * if neither record is at an officer site, the authority's acceptance counts. Until both records are on
+ * this device, the original two-site rule applies.
+ */
+export function requiredSites(found?: Pick<PersonRecord, 'site'>, seeking?: Pick<PersonRecord, 'site'>): SiteId[] {
+  if (!found || !seeking) return SITES.map(s => s.id);
+  const officer = new Set<SiteId>(SITES.map(s => s.id));
+  const sites = [...new Set([found.site, seeking.site])].filter(s => officer.has(s));
+  return sites.length ? sites : [AUTHORITY.id];
+}
+
+/** requiredSites for a pair id, looking both records up. */
+export const requiredFor = (pairId: string, byId: Map<string, PersonRecord>) => {
+  const [f, k] = pairId.split(':');
+  return requiredSites(byId.get(f), byId.get(k));
+};
+
+/**
+ * open → partly_confirmed (some required sites) → confirmed (every required site) → verified (family answer matches).
  * A family answer that does not match sends the pair back to open; officers confirm again.
  */
 export type PairStatus = 'ruled_out' | 'verified' | 'confirmed' | 'partly_confirmed' | 'open';
@@ -18,13 +37,13 @@ export interface PairState {
 
 export const pairKey = (foundId: string, seekingId: string) => `${foundId}:${seekingId}`;
 
-export function pairState(events: MatchEvent[]): PairState {
+export function pairState(events: MatchEvent[], required: SiteId[] = SITES.map(s => s.id)): PairState {
   let confirmedBy: PairState['confirmedBy'] = {};
   let ruledOut: MatchEvent | null = null;
   let verifiedBy: MatchEvent | null = null;
   let lastMismatch: MatchEvent | null = null;
   const needInfo: MatchEvent[] = [];
-  const bothConfirmed = () => SITES.every(s => confirmedBy[s.id]);
+  const bothConfirmed = () => required.every(id => confirmedBy[id]);
 
   for (const e of [...events].sort((a, b) => a.created_at.localeCompare(b.created_at))) {
     if (e.kind === 'confirm') confirmedBy[e.site] ??= e;
@@ -36,12 +55,12 @@ export function pairState(events: MatchEvent[]): PairState {
     } else if (e.kind === 'need_info') needInfo.push(e);
   }
 
-  const confirmedCount = SITES.filter(s => confirmedBy[s.id]).length;
+  const confirmedCount = required.filter(id => confirmedBy[id]).length;
   const status: PairStatus = ruledOut
     ? 'ruled_out'
     : verifiedBy
       ? 'verified'
-      : confirmedCount === SITES.length
+      : confirmedCount === required.length
         ? 'confirmed'
         : confirmedCount > 0
           ? 'partly_confirmed'
@@ -74,13 +93,14 @@ export type SearchStatus = 'Searching' | 'Possible match' | 'Being verified' | '
 export function recordStatus(
   recordId: string,
   suggestions: Suggestion[],
-  events: Map<string, MatchEvent[]>
+  events: Map<string, MatchEvent[]>,
+  byId?: Map<string, PersonRecord>
 ): { status: SearchStatus; suggestion: Suggestion | null } {
   const rank: Record<SearchStatus, number> = { Searching: 0, 'Possible match': 1, 'Being verified': 2, Found: 3 };
   let best: { status: SearchStatus; suggestion: Suggestion | null } = { status: 'Searching', suggestion: null };
   for (const s of suggestions) {
     if (s.found_id !== recordId && s.seeking_id !== recordId) continue;
-    const st = pairState(events.get(s.id) ?? []).status;
+    const st = pairState(events.get(s.id) ?? [], byId ? requiredFor(s.id, byId) : undefined).status;
     const status: SearchStatus | null =
       st === 'verified' ? 'Found' : st === 'confirmed' || st === 'partly_confirmed' ? 'Being verified' : st === 'open' ? 'Possible match' : null;
     if (status && (rank[status] > rank[best.status] || (rank[status] === rank[best.status] && s.score > (best.suggestion?.score ?? -1)))) {

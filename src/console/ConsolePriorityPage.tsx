@@ -4,9 +4,10 @@ import { buildCases } from '../screens/PriorityCasesScreen';
 import { siteName } from '../sites';
 import { go, linkProps, useRoute } from '../route';
 import { useIsDesktop } from '../useIsDesktop';
-import { useConsoleData } from './data';
+import { useConsoleData } from '../workspace/data';
 import { MatchDetail } from './MatchQueuePage';
 import { RecordPanel } from './RecordPage';
+import { EmptyState, HeaderCount, PageHeader } from '../workspace/ui';
 
 /** /console/priority: the field app's priority rules, across every site. Desktop: the chosen case beside the list. */
 export const ConsolePriorityPage: React.FC = () => {
@@ -18,10 +19,12 @@ export const ConsolePriorityPage: React.FC = () => {
   const selected = cases.find(c => c.key === params.get('case')) ?? cases[0];
 
   const intro = (
-    <>
-      <h1 className="screen-title">Priority cases</h1>
-      <p className="text-sm text-navy-muted -mt-2 mb-4">Children with no family located, people with no name, and matches waiting for a confirmation, across all sites.</p>
-    </>
+    <PageHeader
+      compact
+      title="Priority cases"
+      description="Children with no family located, people with no name, and matches waiting for a confirmation, across all sites."
+      aside={<HeaderCount inline value={data ? cases.length : '–'} label="cases" />}
+    />
   );
   if (!data) {
     return (
@@ -38,7 +41,7 @@ export const ConsolePriorityPage: React.FC = () => {
     const r = c.recordId ? data.byId.get(c.recordId) : undefined;
     return (
       <span className="flex-1 min-w-0">
-        <span className="block text-lg font-semibold text-navy truncate">{c.title}</span>
+        <span className="block text-base lg:text-sm font-semibold text-navy truncate">{c.title}</span>
         <span className={`block text-sm font-medium ${c.reasonColor}`}>{c.reason}</span>
         <span className="block text-sm text-navy-muted truncate">
           {r ? `${siteName(r.site)} · ` : ''}
@@ -52,8 +55,8 @@ export const ConsolePriorityPage: React.FC = () => {
     return (
       <>
         {intro}
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6 items-start">
-          <ul className="card p-0 divide-y divide-borderSlate" aria-label="Priority cases">
+        <div className="flex-1 min-h-0 grid grid-cols-[minmax(0,38fr)_minmax(0,62fr)] gap-5">
+          <ul className="panel h-full overflow-y-auto overscroll-contain divide-y divide-borderSlate" aria-label="Priority cases">
             {cases.map(c => {
               const on = c.key === selected?.key;
               return (
@@ -62,7 +65,7 @@ export const ConsolePriorityPage: React.FC = () => {
                     type="button"
                     aria-current={on ? 'true' : undefined}
                     onClick={() => go(`/console/priority?case=${encodeURIComponent(c.key)}`)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left ${on ? 'bg-terracotta-soft shadow-[inset_3px_0_0_theme(colors.terracotta.DEFAULT)]' : 'hover:bg-canvas'}`}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left motion-safe:transition-[background-color] motion-safe:duration-150 ${on ? 'bg-terracotta-soft/50 shadow-edge-accent' : 'hover:bg-canvas'}`}
                   >
                     {caseBody(c)}
                   </button>
@@ -71,15 +74,19 @@ export const ConsolePriorityPage: React.FC = () => {
             })}
             {cases.length === 0 && <li className="p-4 text-center text-base text-navy-muted">No priority cases</li>}
           </ul>
-          <aside className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto pr-1 min-w-0" aria-label="Selected case">
+          <aside className="h-full min-h-0 min-w-0" aria-label="Selected case">
             {selected?.suggestionId ? (
               <MatchDetail key={selected.suggestionId} id={selected.suggestionId} data={data} />
             ) : selected?.recordId ? (
-              <>
-                <p className="text-sm text-navy-muted mb-2">No match suggested yet for this person.</p>
+              <div className="panel h-full overflow-y-auto overscroll-contain p-5">
+                <p className="text-sm text-navy-muted mb-3">No match suggested yet for this person.</p>
                 <RecordPanel id={selected.recordId} data={data} />
-              </>
-            ) : null}
+              </div>
+            ) : (
+              <div className="panel h-full flex items-center justify-center">
+                <EmptyState title="No priority cases" hint="Children alone, people without a name, and matches waiting for a confirmation appear here." />
+              </div>
+            )}
           </aside>
         </div>
       </>

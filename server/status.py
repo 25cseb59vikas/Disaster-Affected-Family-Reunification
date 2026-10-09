@@ -4,16 +4,24 @@ from fastapi import APIRouter, HTTPException
 
 from . import store
 
-# The two officer sites that must both confirm. The authority desk can register people and endorse
-# a match, and it is a help desk, but its confirmation is not one of the two.
+# Officer sites. A pair needs a confirmation from each officer site where its two records were registered
+# (one site when both are at the same site). The authority desk can register people and accept a match;
+# its acceptance counts only when neither record is at an officer site. Same rule as requiredSites() in the app.
 OFFICER_SITES = {"camp-a", "hospital-b"}
 SITE_NAMES = {"camp-a": "Camp A", "hospital-b": "Hospital B", "authority": "Authority desk"}
 
 router = APIRouter()
 
 
-def verified(events: list[dict]) -> bool:
-    """Same rules as the app: both officers confirm, then the family answer matches.
+def required_sites(found: dict | None, seeking: dict | None) -> set[str]:
+    if found is None or seeking is None:
+        return set(OFFICER_SITES)
+    sites = {found.get("site"), seeking.get("site")} & OFFICER_SITES
+    return sites or {"authority"}
+
+
+def verified(events: list[dict], required: set[str] = OFFICER_SITES) -> bool:
+    """Same rules as the app: every required site confirms, then the family answer matches.
     A family answer that does not match clears the confirmations."""
     if any(e["kind"] == "rule_out" for e in events):
         return False
@@ -23,7 +31,7 @@ def verified(events: list[dict]) -> bool:
             confirmed.add(e["site"])
         elif e["kind"] == "family_mismatch":
             confirmed.clear()
-        elif e["kind"] == "family_match" and confirmed >= OFFICER_SITES:
+        elif e["kind"] == "family_match" and confirmed >= required:
             return True
     return False
 
@@ -41,9 +49,10 @@ def family_status(code: str):
         if e.get(side) == rid:
             pairs.setdefault((e["found_id"], e["seeking_id"]), []).append(e)
 
-    for (found_id, _), events in pairs.items():
-        if verified(events):
-            found = next((r for r in store.all_records() if r["id"] == found_id), record)
+    by_id = {r["id"]: r for r in store.all_records()}
+    for (found_id, seeking_id), events in pairs.items():
+        if verified(events, required_sites(by_id.get(found_id), by_id.get(seeking_id))):
+            found = by_id.get(found_id, record)
             return {"status": "found", "help_desk": SITE_NAMES.get(found["site"], found["site"])}
 
     ruled_out = {k for k, evs in pairs.items() if any(e["kind"] == "rule_out" for e in evs)}
