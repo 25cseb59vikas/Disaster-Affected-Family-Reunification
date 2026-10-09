@@ -142,3 +142,39 @@ class ConfirmationsAndStatus(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class LinkedSearchEvidence(unittest.TestCase):
+    def setUp(self):
+        reset()
+
+    def test_reciprocal_search_adds_score_and_reason(self):
+        from server.matching import compute
+        a = found_person(name="Lakshmi", relative_name="Karthik", relative_relation="son")
+        b = record("hospital-b", "found", name="Karthik", gender="male", age_band="Under 12",
+                   village="Meppadi", relative_name="Lakshmi", relative_relation="mother")
+        seeking_b = record("camp-a", "seeking", name="Karthik", gender="male", age_band="Under 12",
+                           village="Meppadi", searcher_id=a["id"])
+        seeking_a = record("hospital-b", "seeking", name="Lakshmi", gender="female", age_band="19–59",
+                           village="Meppadi", searcher_id=b["id"])
+        base = compute([a, b, seeking_b], [])
+        reciprocal = compute([a, b, seeking_b, seeking_a], [])
+        first = next(x for x in base if x["found_id"] == b["id"] and x["seeking_id"] == seeking_b["id"])
+        second = next(x for x in reciprocal if x["found_id"] == b["id"] and x["seeking_id"] == seeking_b["id"])
+        self.assertGreater(second["score"], first["score"])
+        self.assertIn("They are looking for each other", second["reasons_for"])
+        self.assertFalse(any(x["found_id"] == a["id"] and x["seeking_id"] == seeking_b["id"] for x in reciprocal))
+
+    def test_approved_household_match_adds_score(self):
+        from server.matching import compute
+        a = found_person(name="Lakshmi", relative_name=None, clothing_marks=None)
+        b = found_person(name="Karthik", gender="male", age_band="Under 12", relative_name=None,
+                         clothing_marks=None)
+        s1 = search_from("hospital-b", household_id="family-1")
+        s2 = search_from("hospital-b", name="Karthik", gender="male", age_band="Under 12",
+                         relative_name=None, clothing_marks=None, household_id="family-1")
+        records = [a, b, s1, s2]
+        base = compute(records, [])
+        approved = compute(records, [{"kind": "family_match", "found_id": a["id"], "seeking_id": s1["id"]}])
+        def score(items):
+            return next(x["score"] for x in items if x["found_id"] == b["id"] and x["seeking_id"] == s2["id"])
+        self.assertGreater(score(approved), score(base))

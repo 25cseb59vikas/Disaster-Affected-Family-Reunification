@@ -317,6 +317,21 @@ def compute(records: list[dict], events: list[dict]) -> list[dict]:
     freq = NameFrequency(records)
     by_id = {r["id"]: r for r in records}
 
+    # Existing approved household pairs can corroborate another member's search.
+    approved = {(e.get("found_id"), e.get("seeking_id")) for e in events
+                if e.get("kind") == "family_match"}
+    approved_households = {
+        (by_id[sid].get("household_id"), by_id[fid].get("site"))
+        for fid, sid in approved if fid in by_id and sid in by_id
+        and by_id[sid].get("household_id")
+    }
+    # Reciprocal evidence is independent of the candidate's own search: the
+    # candidate must have a separate linked search for the original searcher.
+    searches_by_searcher = {}
+    for other in seeking:
+        if other.get("searcher_id"):
+            searches_by_searcher.setdefault(other["searcher_id"], []).append(other)
+
     results = []
     for s in seeking:
         cands = []
@@ -334,6 +349,19 @@ def compute(records: list[dict], events: list[dict]) -> list[dict]:
             ev = score_pair(f, evidence_search, freq)
             if searcher:
                 ev["reasons_for"].append(f"Searcher registered at {searcher.get('site')}: {searcher.get('name') or 'unnamed'}")
+                # Reciprocal names alone are weak; require the reverse search
+                # to have compatible demographics and an independently close name.
+                for reverse in searches_by_searcher.get(f["id"], []):
+                    if reverse["id"] == s["id"] or not compatible(searcher, reverse):
+                        continue
+                    reverse_sim = similar(searcher.get("name"), reverse.get("name"))
+                    if reverse_sim is not None and reverse_sim >= 0.9:
+                        ev["score"] = min(100, ev["score"] + 12)
+                        ev["reasons_for"].append("They are looking for each other")
+                        break
+            if s.get("household_id") and (s["household_id"], f.get("site")) in approved_households:
+                ev["score"] = min(100, ev["score"] + 6)
+                ev["reasons_for"].append("Another member of this household has a verified match at this site")
             if ev["score"] >= POSSIBLE:
                 cands.append((f, ev))
         cands.sort(key=lambda c: -c[1]["score"])
