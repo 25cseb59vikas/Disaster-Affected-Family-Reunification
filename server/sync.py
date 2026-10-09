@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from starlette.concurrency import run_in_threadpool
 
 from . import demo_family, matching, store
+from .legacy_migration import migrate_stored_records
 from .load_testdata import load
 
 log = logging.getLogger("sync")
@@ -71,6 +72,7 @@ async def sync_push(request: Request):
 
     def apply() -> list[str]:
         accepted = store.add_records(records, origin=site) + store.add_events(events, origin=site)
+        migrate_stored_records(store)
         matching.update_suggestions()
         return accepted
 

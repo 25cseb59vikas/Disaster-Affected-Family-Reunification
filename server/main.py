@@ -85,7 +85,11 @@ FIELDS_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "properties": {"relation": {"type": "string"}, "name": {"type": ["string", "null"]}},
+                "properties": {"relation": {"type": "string"}, "name": {"type": ["string", "null"]},
+                               "age_band": {"type": ["string", "null"], "enum": AGE_BANDS + [None]},
+                               "gender": {"type": "string", "enum": GENDERS},
+                               "last_seen": {"type": ["string", "null"]},
+                               "clothing_marks": {"type": ["string", "null"]}},
                 "required": ["relation", "name"],
             },
         },
@@ -144,6 +148,11 @@ def warm_up_ollama() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Upgrade previously synced legacy registrations before serving status/matches.
+    from . import store, matching
+    from .legacy_migration import migrate_stored_records
+    if migrate_stored_records(store):
+        matching.update_suggestions()
     load_whisper()
     # Load the language model now (in the background) so the first note is not slow.
     threading.Thread(target=warm_up_ollama, daemon=True).start()
@@ -179,6 +188,10 @@ def clean_fields(raw) -> dict:
             out["looking_for"].append({
                 "relation": item["relation"].strip(),
                 "name": name.strip() if isinstance(name, str) and name.strip() else None,
+                "age_band": item.get("age_band") if item.get("age_band") in AGE_BANDS else None,
+                "gender": item.get("gender") if item.get("gender") in GENDERS else "unknown",
+                "last_seen": item.get("last_seen") if isinstance(item.get("last_seen"), str) else None,
+                "clothing_marks": item.get("clothing_marks") if isinstance(item.get("clothing_marks"), str) else None,
             })
     return out
 
