@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { recordStatus, type SearchStatus } from '../matchStatus';
 import { AUTHORITY, FAMILY_APP, PHONE_LINE, SITES, siteName } from '../sites';
 import { timeSince } from '../screens/SearchRecordsScreen';
@@ -32,7 +32,13 @@ export const RecordsPage: React.FC = () => {
   const { params } = useRoute();
   // Desktop: the chosen record shows beside the table (?id=); phones and tablets open the record page.
   const open = (id: string) => go(desktop ? `/console/records?id=${encodeURIComponent(id)}` : `/console/records/${id}`);
-  const [query, setQuery] = useState('');
+  const { params: routeParams } = useRoute();
+  // The top bar's search lands here with ?q=.
+  const [query, setQuery] = useState(() => routeParams.get('q') ?? '');
+  const q0 = routeParams.get('q');
+  useEffect(() => {
+    if (q0 !== null) setQuery(q0);
+  }, [q0]);
   const [site, setSite] = useState('');
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');

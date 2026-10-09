@@ -12,6 +12,8 @@ import './components/InstallButton'; // starts listening for the browser's insta
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
 import './index.css';
 
 function Root() {

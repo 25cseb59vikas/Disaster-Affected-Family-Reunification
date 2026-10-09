@@ -5,7 +5,7 @@ import { siteName } from '../sites';
 import { go, linkProps, useRoute } from '../route';
 import { useIsDesktop } from '../useIsDesktop';
 import { useConsoleData } from './data';
-import { MatchDetail, Notice } from './MatchQueuePage';
+import { MatchDetail } from './MatchQueuePage';
 import { RecordPanel } from './RecordPage';
 
 /** /console/priority: the field app's priority rules, across every site. Desktop: the chosen case beside the list. */
@@ -73,10 +73,7 @@ export const ConsolePriorityPage: React.FC = () => {
           </ul>
           <aside className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto pr-1 min-w-0" aria-label="Selected case">
             {selected?.suggestionId ? (
-              <>
-                <Notice />
-                <MatchDetail key={selected.suggestionId} id={selected.suggestionId} data={data} />
-              </>
+              <MatchDetail key={selected.suggestionId} id={selected.suggestionId} data={data} />
             ) : selected?.recordId ? (
               <>
                 <p className="text-sm text-navy-muted mb-2">No match suggested yet for this person.</p>

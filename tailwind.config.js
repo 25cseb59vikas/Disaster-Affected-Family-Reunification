@@ -8,6 +8,11 @@ export default {
   ],
   theme: {
     fontSize: {
+      // Desktop workspace (console first): labels, table text, page titles and key numbers.
+      label: ['11px', { lineHeight: '1.3', letterSpacing: '0.06em' }],  // uppercase data and navigation labels
+      table: ['13px', { lineHeight: '1.35' }],                          // table cells and dense secondary text
+      title: ['26px', { lineHeight: '1.15', letterSpacing: '-0.015em' }], // page titles (display font)
+      metric: ['36px', { lineHeight: '1.05', letterSpacing: '-0.02em' }], // key numbers (display font)
       xs: ['12px', { lineHeight: '1.4' }],                               // captions, nav labels
       sm: ['14px', { lineHeight: '1.4' }],                               // secondary text, badges, labels
       base: ['15px', { lineHeight: '1.4' }],                             // body, inputs, buttons
@@ -59,14 +64,33 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'], // page titles and large numbers only
       },
       borderRadius: {
         card: '12px',
         button: '10px',
         badge: '6px',
+        panel: '6px', // desktop panels and inputs
+        cell: '4px',  // table elements, small controls inside panels
       },
       boxShadow: {
         subtle: '0 1px 2px rgba(15, 27, 45, 0.06)',
+        // Three surface levels: page (none), panel (hairline ring + soft lift), raised card / overlay.
+        panel: '0 0 0 1px rgba(15, 27, 45, 0.07), 0 1px 2px -1px rgba(15, 27, 45, 0.06), 0 2px 4px 0 rgba(15, 27, 45, 0.04)',
+        raised: '0 0 0 1px rgba(15, 27, 45, 0.08), 0 2px 4px -1px rgba(15, 27, 45, 0.08), 0 8px 16px -4px rgba(15, 27, 45, 0.08)',
+        overlay: '0 0 0 1px rgba(15, 27, 45, 0.08), 0 16px 40px -8px rgba(15, 27, 45, 0.28)',
+        'edge-accent': 'inset 3px 0 0 #C2540F', // active navigation item and selected row
+      },
+      keyframes: {
+        fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+        slideIn: { from: { transform: 'translateX(-16px)', opacity: '0' }, to: { transform: 'none', opacity: '1' } },
+        slideInRight: { from: { transform: 'translateX(16px)', opacity: '0' }, to: { transform: 'none', opacity: '1' } },
+        rise: { from: { transform: 'translateY(8px)', opacity: '0' }, to: { transform: 'none', opacity: '1' } },
+      },
+      // Sidebar widths on the spacing scale, so both w-sidebar and pl-sidebar exist.
+      spacing: {
+        sidebar: '248px',
+        'sidebar-rail': '72px',
       },
       maxWidth: {
         app: '430px',
