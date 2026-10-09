@@ -85,6 +85,15 @@ class SearchAndFoundInEitherOrder(unittest.TestCase):
         self.assertEqual(s["band"], "Possible")
         self.assertEqual(status(search["code"])["status"], "checking")
 
+    def test_status_reads_new_server_match_without_cached_searching(self):
+        search = search_from("family-app")
+        push("family-app", [search])
+        self.assertEqual(status(search["code"])["status"], "searching")
+        found = found_person()
+        push("camp-a", [found])
+        self.assertEqual(status(search["code"])["status"], "checking")
+        self.assertIsNotNone(pair(found, search))
+
     def test_an_edited_record_is_matched_again(self):
         search = search_from("family-app")
         push("family-app", [search])

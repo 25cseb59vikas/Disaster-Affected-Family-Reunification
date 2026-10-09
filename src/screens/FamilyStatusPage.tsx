@@ -68,7 +68,7 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/status/${encodeURIComponent(c)}`, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(`/api/status/${encodeURIComponent(c)}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (res.status === 404) {
         setResult(null);
         setError('No record with that code yet. New records can take a few minutes to appear. Check the code, or ask at the help desk.');
@@ -90,6 +90,17 @@ export const StatusChecker: React.FC<{ initialCode?: string; onUrl?: (code: stri
     // Only on first load with a code
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A family must see a match registered *after* their initial search without manually refreshing.
+  useEffect(() => {
+    if (!result || !code.trim() || result.status === 'found') return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') check(code);
+    }, 15000);
+    return () => window.clearInterval(timer);
+    // Polling is reset only when the code or status changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, result?.status]);
 
   const [en, ta] = result ? SENTENCES[result.status](result.help_desk ?? '') : ['', ''];
 

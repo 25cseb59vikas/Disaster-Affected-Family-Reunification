@@ -94,7 +94,7 @@ export async function syncOnce(db: SiteDatabase, site: SiteId): Promise<number> 
     await db.suggestions.bulkDelete(hidden);
     await db.suggestions.bulkPut(data.suggestions.filter(s => !s.hidden));
     await setMeta(db, 'cursor', data.cursor);
-    await addNotifications(db, site, data, knownSuggestions, since === 0);
+    await addNotifications(db, site, data, knownSuggestions);
   });
 
   return bytesSent;
@@ -103,17 +103,17 @@ export async function syncOnce(db: SiteDatabase, site: SiteId): Promise<number> 
 /**
  * Notifications for this site's volunteers: a new suggestion involving a record registered here,
  * a confirmation by the other site, and a match verified with the family.
- * The first pull for a site only fills the list (already seen), so a fresh device is not flooded.
+ * Newly received suggestions notify the site even on its first pull; otherwise a
+ * fresh camp or console silently misses the first match.
  */
 async function addNotifications(
   db: SiteDatabase,
   site: SiteId,
   data: { events: MatchEvent[]; suggestions: Suggestion[] },
-  knownSuggestions: Set<string>,
-  firstPull: boolean
+  knownSuggestions: Set<string>
 ) {
   const now = new Date().toISOString();
-  const seen = firstPull ? 1 : 0;
+  const seen = 0;
   const out: AppNotification[] = [];
 
   // The record registered here for a pair (and the found record), or null if neither side is ours.
