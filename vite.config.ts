@@ -18,19 +18,22 @@ function precacheList(): Plugin {
 
 // `--mode http` (npm run dev:http): plain HTTP on port 3001. Chrome only runs service workers (offline,
 // install) on a trusted origin, and the self-signed HTTPS certificate is not trusted; http://localhost is.
+// REUNITE_API and REUNITE_PORT let the automated workflow tests run a second app against a throwaway server.
+const API = process.env.REUNITE_API ?? 'http://127.0.0.1:8000';
+
 export default defineConfig(({ mode }) => {
   const http = mode === 'http';
   return {
     // HTTPS with a self-signed certificate: phones only allow the microphone on HTTPS (or localhost).
     plugins: [react(), ...(http ? [] : [basicSsl()]), precacheList()],
     server: {
-      port: http ? 3001 : 3000,
+      port: Number(process.env.REUNITE_PORT) || (http ? 3001 : 3000),
       strictPort: true,
       host: true, // listen on the local network so phones on the same Wi-Fi can connect
       // Everything server-side goes through /api on this same origin: voice, sync, status, /api/sim.
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:8000',
+          target: API,
           rewrite: path => path.replace(/^\/api/, '')
         }
       }
@@ -41,7 +44,7 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:8000',
+          target: API,
           rewrite: path => path.replace(/^\/api/, '')
         }
       }

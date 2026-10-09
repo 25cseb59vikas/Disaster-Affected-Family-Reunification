@@ -259,6 +259,17 @@ def score_pair(f: dict, s: dict, freq: NameFrequency) -> dict:
     else:
         unknown.append("age_band")
 
+    # Full names agree (every word, initials not conflicting) and gender or age agrees, with nothing against:
+    # a Possible match even when nothing else is recorded yet, so the sites are asked to check. Without this,
+    # a sparse pair with a common name stays under the threshold and nobody is told (missing fields would
+    # lower the score). Common names still stay below Strong.
+    if nf and ns and nf.keys and set(nf.keys) == set(ns.keys) and not con and (
+            not nf.initials or not ns.initials or set(nf.initials) & set(ns.initials)):
+        gender_agrees = f.get("gender") in ("male", "female") and f.get("gender") == s.get("gender")
+        if (gender_agrees or gap == 0) and pts < POSSIBLE:
+            pts = POSSIBLE
+            pro.append("Full names agree; little else is recorded on both sides yet")
+
     nameless = not nf
     if nameless:
         # Score over the evidence that can exist: the name weight is left out of the maximum.

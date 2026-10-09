@@ -66,18 +66,23 @@ def current_seq() -> int:
 
 
 def add_records(records: list[dict], origin: str) -> list[str]:
-    """Stores new records; ids already stored are left alone. Returns every id now safely stored."""
+    """Stores new records and edits of stored ones (a changed record gets a new seq, so matching and every
+    other device see the new version). A resend of the same data changes nothing. Returns every id now stored."""
     accepted = []
     with _lock:
         c = conn()
         for r in records:
             if not isinstance(r, dict) or not r.get("id") or r.get("type") not in ("found", "seeking"):
                 continue
-            if c.execute("SELECT 1 FROM records WHERE id = ?", (r["id"],)).fetchone() is None:
+            row = c.execute("SELECT data FROM records WHERE id = ?", (r["id"],)).fetchone()
+            if row is None:
                 c.execute(
                     "INSERT INTO records (id, code, site, type, origin, created_at, seq, data) VALUES (?,?,?,?,?,?,?,?)",
                     (r["id"], r.get("code"), r.get("site"), r["type"], origin, r.get("created_at"),
                      _next_seq(c), json.dumps(r)))
+            elif json.loads(row["data"]) != r:
+                c.execute("UPDATE records SET code = ?, site = ?, type = ?, seq = ?, data = ? WHERE id = ?",
+                          (r.get("code"), r.get("site"), r["type"], _next_seq(c), json.dumps(r), r["id"]))
             accepted.append(r["id"])
         c.commit()
     return accepted
