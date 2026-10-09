@@ -321,9 +321,19 @@ def compute(records: list[dict], events: list[dict]) -> list[dict]:
     for s in seeking:
         cands = []
         for f in found:
-            if (f["id"], s["id"]) in ruled_out or not compatible(f, s):
+            if f["id"] == s.get("searcher_id") or (f["id"], s["id"]) in ruled_out or not compatible(f, s):
                 continue
-            ev = score_pair(f, s, freq)
+            # Linked searcher is a known person, never a candidate for their own search.
+            searcher = by_id.get(s.get("searcher_id"))
+            evidence_search = dict(s)
+            if searcher:
+                if not evidence_search.get("relative_name"):
+                    evidence_search["relative_name"] = searcher.get("name")
+                if not evidence_search.get("village"):
+                    evidence_search["village"] = searcher.get("village")
+            ev = score_pair(f, evidence_search, freq)
+            if searcher:
+                ev["reasons_for"].append(f"Searcher registered at {searcher.get('site')}: {searcher.get('name') or 'unnamed'}")
             if ev["score"] >= POSSIBLE:
                 cands.append((f, ev))
         cands.sort(key=lambda c: -c[1]["score"])

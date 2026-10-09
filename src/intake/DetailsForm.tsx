@@ -174,7 +174,7 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
         isFound && hasMissingFamily
           ? lookingFor
               .filter(p => p.relation.trim() || p.name?.trim())
-              .map(p => ({ relation: p.relation.trim(), name: p.name?.trim() || null }))
+              .map(p => ({ ...p, relation: p.relation.trim(), name: p.name?.trim() || null }))
           : [],
       transcript: transcript || null,
       photo
@@ -429,10 +429,10 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
 
         {isFound && hasMissingFamily && (
           <div className="lg:col-span-2">
-            <FieldLabel label="Looking for" unsure={unsure('looking_for')} />
+            <FieldLabel label="Are they looking for anyone?" unsure={unsure('looking_for')} />
             <div className="space-y-2">
               {lookingFor.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 gap-2">
+                <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-borderSlate p-2">
                   <input
                     aria-label={`Relation ${i + 1}`}
                     placeholder="Relation"
@@ -447,6 +447,15 @@ export const DetailsForm: React.FC<DetailsFormProps> = ({ formId, type, draft, v
                     onChange={e => updateLookingFor(i, { name: e.target.value })}
                     className={inputClass(unsure('looking_for'))}
                   />
+                  <select aria-label={`Age band ${i + 1}`} className="input" value={p.age_band || ''} onChange={e => updateLookingFor(i, { age_band: (e.target.value || null) as AgeBand | null })}>
+                    <option value="">Age unknown</option>
+                    {['Under 12', '12–18', '19–59', '60+'].map(a => <option key={a}>{a}</option>)}
+                  </select>
+                  <select aria-label={`Gender ${i + 1}`} className="input" value={p.gender || 'unknown'} onChange={e => updateLookingFor(i, { gender: e.target.value as Gender })}>
+                    {['unknown', 'female', 'male', 'other'].map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <input aria-label={`Last seen ${i + 1}`} placeholder="Where last seen" className="input" value={p.last_seen || ''} onChange={e => updateLookingFor(i, { last_seen: e.target.value })} />
+                  <input aria-label={`Clothing or marks ${i + 1}`} placeholder="Clothing or marks" className="input" value={p.clothing_marks || ''} onChange={e => updateLookingFor(i, { clothing_marks: e.target.value })} />
                 </div>
               ))}
             </div>

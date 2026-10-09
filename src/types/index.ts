@@ -21,6 +21,10 @@ export type AgeBand = 'Under 12' | '12–18' | '19–59' | '60+';
 export interface LookingFor {
   relation: string;
   name: string | null;
+  age_band?: AgeBand | null;
+  gender?: Gender;
+  last_seen?: string | null;
+  clothing_marks?: string | null;
 }
 
 /**
@@ -49,6 +53,8 @@ export interface PersonRecord {
   source?: 'app' | 'phone' | 'family'; // phone = the simulated phone line; family = the family app
   private_detail?: string | null; // found only: for the family check; never shown to searchers or on /status
   household_id: string | null;
+  /** Found person physically present and making this search, when applicable. */
+  searcher_id?: string | null;
   has_missing_family: boolean;
   looking_for: LookingFor[];
   transcript: string | null;
