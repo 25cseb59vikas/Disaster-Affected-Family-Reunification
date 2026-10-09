@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, LayoutDashboard, ListChecks, Menu, Repeat, Search, Settings, Table2, UserPlus, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, LayoutDashboard, ListChecks, Menu, Repeat, Search, Settings, Table2, type LucideIcon } from 'lucide-react';
 import { AppProvider, useApp } from '../context/AppContext';
 import { AUTHORITY } from '../sites';
 import { switchRole } from '../role';
@@ -14,7 +14,6 @@ import { MatchQueuePage } from './MatchQueuePage';
 import { ConsolePriorityPage } from './ConsolePriorityPage';
 import { RecordsPage } from './RecordsPage';
 import { RecordPage } from './RecordPage';
-import { ConsoleRegisterPage } from './ConsoleRegisterPage';
 import { SettingsPage } from './SettingsPage';
 
 const OFFICER_KEY = 'reunite.consoleOfficer';
@@ -101,8 +100,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: 'People',
     items: [
-      { path: '/console/records', label: 'Records', Icon: Table2 },
-      { path: '/console/register', label: 'Register', Icon: UserPlus }
+      { path: '/console/records', label: 'Records', Icon: Table2 }
     ]
   },
   { label: 'Console', items: [{ path: '/console/settings', label: 'Settings', Icon: Settings }] }
@@ -275,7 +273,6 @@ const ConsoleShell: React.FC<{ officer: string; onChangeOfficer: () => void }> =
   else if (path.startsWith('/console/priority')) page = <ConsolePriorityPage />;
   else if (path.startsWith('/console/records/')) page = <RecordPage id={decodeURIComponent(path.slice('/console/records/'.length))} />;
   else if (path.startsWith('/console/records')) page = <RecordsPage />;
-  else if (path.startsWith('/console/register')) page = <ConsoleRegisterPage />;
   else if (path.startsWith('/console/settings')) page = <SettingsPage />;
   else page = <OverviewPage />;
 

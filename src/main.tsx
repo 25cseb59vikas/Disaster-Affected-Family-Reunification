@@ -20,6 +20,10 @@ void refreshSites();
 window.setInterval(() => { void refreshSites(); }, 15000);
 
 function Root() {
+  // Retired authority-desk intake URLs go to the records view.
+  if (location.pathname === '/console/register' || location.pathname.startsWith('/console/register/')) {
+    history.replaceState(null, '', '/console/records');
+  }
   const path = location.pathname;
   // Stand-alone pages: no volunteer state, no site sync.
   if (path.startsWith('/status')) return <FamilyStatusPage />;
