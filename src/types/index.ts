@@ -94,7 +94,9 @@ export interface Suggestion {
 /** Something the volunteer at this site should look at. seen/toasted are 0/1 so they can be indexed. */
 export interface AppNotification {
   id: string; // e.g. "match:<pair>", "confirm:<event id>", "verified:<pair>"
-  kind: 'match' | 'confirm' | 'verified';
+  // match: a new suggestion; confirm: the other site confirmed; authority: the authority accepted;
+  // rejected: the match was ruled out; verified: the family check passed.
+  kind: 'match' | 'confirm' | 'authority' | 'rejected' | 'verified';
   suggestion_id: string;
   text: string;
   created_at: string;

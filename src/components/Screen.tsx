@@ -8,13 +8,15 @@ interface ScreenProps {
   header?: boolean;
   showBack?: boolean;
   /** Active navigation tab; omit to hide the bottom navigation on phones. */
-  nav?: NavTab | 'notifications';
+  nav?: NavTab;
   /** Pinned under the content, above the nav (e.g. a Save button). Right-aligned on desktop. */
   footer?: React.ReactNode;
   /** Sidebar item to highlight on desktop when it differs from `nav` (e.g. Notifications). */
-  sidebar?: NavTab | 'notifications';
+  sidebar?: NavTab;
   /** Content width from tablet size up. Desktop screens with lists or two columns use 'wide'. */
   width?: 'narrow' | 'medium' | 'wide';
+  /** Desktop work pages: the content fills the height and its panes scroll on their own (no page scroll). */
+  fill?: boolean;
 }
 
 const WIDTH = {
@@ -25,25 +27,27 @@ const WIDTH = {
 
 // Phones (below 768px) and tablets: a 100dvh column with the top bar and bottom navigation; only the
 // middle scrolls. Desktop (1024px and up): navy sidebar on the left, status bar on top of the content.
-export const Screen: React.FC<ScreenProps> = ({ children, header = true, showBack = false, nav, sidebar, footer, width = 'medium' }) => (
+export const Screen: React.FC<ScreenProps> = ({ children, header = true, showBack = false, nav, sidebar, footer, width = 'medium', fill }) => (
   <div className="h-dvh w-full max-w-app md:max-w-none mx-auto flex bg-canvas">
     {header && <AppSidebar activeTab={sidebar ?? nav} />}
     <div className="flex-1 min-w-0 flex flex-col">
       {header && <TopBar showBack={showBack} />}
       {header && <DesktopStatusBar showBack={showBack} />}
-      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-6 lg:px-8 lg:py-8">
-        <div className={`mx-auto w-full ${WIDTH[width]}`}>{children}</div>
+      <main
+        className={`flex-1 min-h-0 overflow-x-hidden px-4 pt-4 pb-6 lg:px-8 ${fill ? 'overflow-y-auto lg:overflow-hidden lg:flex lg:flex-col lg:py-4' : 'overflow-y-auto lg:py-8'}`}
+      >
+        <div className={`mx-auto w-full ${WIDTH[width]} ${fill ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : ''}`}>{children}</div>
       </main>
       {footer && (
         <div
           className={`flex-none px-4 lg:px-8 pt-3 bg-canvas border-t border-borderSlate ${
-            nav && nav !== 'notifications' ? 'pb-3' : 'pb-[max(12px,env(safe-area-inset-bottom))]'
+            nav ? 'pb-3' : 'pb-[max(12px,env(safe-area-inset-bottom))]'
           }`}
         >
           <div className={`screen-footer mx-auto w-full ${WIDTH[width]}`}>{footer}</div>
         </div>
       )}
-      {nav && nav !== 'notifications' && <BottomNav activeTab={nav} />}
+      {nav && <BottomNav activeTab={nav} />}
     </div>
   </div>
 );

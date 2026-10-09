@@ -1,7 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Bell } from 'lucide-react';
-import { useUnseenCount } from './Notifications';
+import { ArrowLeft } from 'lucide-react';
 import { siteName } from '../sites';
 import { SwitchMenu } from './SwitchMenu';
 
@@ -27,10 +26,9 @@ export function useSyncLine() {
   return { statusText, dot, canSyncNow, syncNow };
 }
 
-/** Phones and tablets: navy bar with site, volunteer, notifications and Switch, plus the sync line. */
+/** Phones and tablets: navy bar with site, volunteer and Switch, plus the sync line (Notifications is in the navigation). */
 export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
-  const { site, volunteerName, goBack, canGoBack, navigateTo } = useApp();
-  const unseen = useUnseenCount();
+  const { site, volunteerName, goBack, canGoBack } = useApp();
   const { statusText, dot, canSyncNow, syncNow } = useSyncLine();
 
   return (
@@ -50,15 +48,6 @@ export const TopBar: React.FC<TopBarProps> = ({ showBack = false }) => {
           <p className="text-base font-semibold truncate">{siteName(site)}</p>
           <p className="text-xs text-white/70 truncate">{volunteerName}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => navigateTo('notifications')}
-          aria-label={unseen ? `Notifications, ${unseen} new` : 'Notifications'}
-          className="relative shrink-0 w-11 h-11 rounded-button flex items-center justify-center hover:bg-white/10"
-        >
-          <Bell className="icon" />
-          {unseen > 0 && <span aria-hidden className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-urgent ring-2 ring-header" />}
-        </button>
         <div className="shrink-0">
           <SwitchMenu />
         </div>

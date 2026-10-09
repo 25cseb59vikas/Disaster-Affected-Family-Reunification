@@ -8,10 +8,8 @@ import { SavedScreen } from './screens/SavedScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import { RecordDetailScreen } from './screens/RecordDetailScreen';
 import { NotificationToast } from './components/Notifications';
-import { SuggestedMatchesScreen } from './screens/SuggestedMatchesScreen';
 import { MatchReviewScreen } from './screens/MatchReviewScreen';
 import { SearchRecordsScreen } from './screens/SearchRecordsScreen';
-import { PriorityCasesScreen } from './screens/PriorityCasesScreen';
 import type { ScreenId } from './types';
 
 export const AppContent: React.FC = () => {
@@ -33,14 +31,14 @@ export const AppContent: React.FC = () => {
         return <NotificationsScreen />;
       case 'record_detail':
         return <RecordDetailScreen />;
+      // The volunteer app no longer has Matches or Priority (the authority console reviews and decides).
       case 'suggested_matches':
-        return <SuggestedMatchesScreen />;
+      case 'priority_cases':
+        return <NotificationsScreen />;
       case 'match_review':
         return <MatchReviewScreen />;
       case 'search_records':
         return <SearchRecordsScreen />;
-      case 'priority_cases':
-        return <PriorityCasesScreen />;
       default:
         return <ChooseSiteScreen />;
     }
@@ -61,10 +59,10 @@ const DEBUG_SCREENS: Array<[ScreenId, string]> = [
   ['register_speak', 'Speak'],
   ['verify_details', 'Verify'],
   ['saved', 'Saved'],
-  ['suggested_matches', 'Matches'],
-  ['match_review', 'Review'],
+  ['notifications', 'Notifications'],
+  ['match_review', 'Evidence'],
   ['search_records', 'Search'],
-  ['priority_cases', 'Priority']
+  ['record_detail', 'Record']
 ];
 
 // Dev-only screen jumper. Hidden by default; open with ?debug=1 or Ctrl+Shift+D.

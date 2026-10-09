@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { buildCases } from '../screens/PriorityCasesScreen';
+import { buildCases } from '../priority';
 import { siteName } from '../sites';
 import { go, linkProps, useRoute } from '../route';
 import { useIsDesktop } from '../useIsDesktop';

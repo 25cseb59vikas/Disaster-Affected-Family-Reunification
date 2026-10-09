@@ -116,31 +116,41 @@ async function addNotifications(
   const seen = firstPull ? 1 : 0;
   const out: AppNotification[] = [];
 
-  // The record registered here for a pair, or null if neither side is ours.
+  // The record registered here for a pair (and the found record), or null if neither side is ours.
   const ours = async (foundId: string, seekingId: string) => {
     const [f, s] = await Promise.all([db.records.get(foundId), db.records.get(seekingId)]);
     const r = f?.site === site ? f : s?.site === site ? s : null;
-    return r ? r.name ?? 'unnamed person' : null;
+    return r ? { name: r.name ?? 'unnamed person', record: r, found: f } : null;
   };
 
   for (const s of data.suggestions) {
     if (s.hidden || knownSuggestions.has(s.id)) continue;
-    const name = await ours(s.found_id, s.seeking_id);
-    if (name) {
+    const mine = await ours(s.found_id, s.seeking_id);
+    if (mine) {
       out.push({ id: `match:${s.id}`, kind: 'match', suggestion_id: s.id, created_at: now, seen, toasted: seen,
-        text: `Possible match for ${name} registered here. Tap to review.` });
+        text: `Possible match for ${mine.name} registered here.` });
     }
   }
   for (const e of data.events) {
     const pair = `${e.found_id}:${e.seeking_id}`;
-    const name = await ours(e.found_id, e.seeking_id);
-    if (!name) continue;
-    if (e.kind === 'confirm' && e.site !== site) {
+    const mine = await ours(e.found_id, e.seeking_id);
+    if (!mine) continue;
+    const { name } = mine;
+    if (e.kind === 'confirm' && e.site === AUTHORITY.id) {
+      out.push({ id: `authority:${e.id}`, kind: 'authority', suggestion_id: pair, created_at: now, seen, toasted: seen,
+        text: `Match for ${name} confirmed by the authority.` });
+    } else if (e.kind === 'confirm' && e.site !== site) {
       out.push({ id: `confirm:${e.id}`, kind: 'confirm', suggestion_id: pair, created_at: now, seen, toasted: seen,
-        text: `${siteName(e.site)} confirmed the match for ${name}. Tap to review.` });
+        text: `${siteName(e.site)} confirmed the match for ${name}.` });
+    } else if (e.kind === 'rule_out') {
+      out.push({ id: `rejected:${pair}`, kind: 'rejected', suggestion_id: pair, created_at: now, seen, toasted: seen,
+        text: `Match for ${name} rejected.` });
     } else if (e.kind === 'family_match') {
       out.push({ id: `verified:${pair}`, kind: 'verified', suggestion_id: pair, created_at: now, seen, toasted: seen,
-        text: `Match for ${name} verified with the family.` });
+        text:
+          mine.record.type === 'found'
+            ? `Family verified – bring ${name} to the help desk.`
+            : `Family verified – ${name} was found at ${siteName(mine.found?.site ?? '')}. Send the family to the help desk there.` });
     }
   }
   // Never re-add (and so re-alert) a notification that already exists.

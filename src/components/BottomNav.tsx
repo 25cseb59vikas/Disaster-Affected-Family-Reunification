@@ -1,19 +1,19 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import type { ScreenId } from '../types';
-import { AlertTriangle, Bell, Search, UserPlus, Users, type LucideIcon } from 'lucide-react';
+import { Bell, Search, UserPlus, type LucideIcon } from 'lucide-react';
 import { siteName } from '../sites';
 import { SwitchMenu } from './SwitchMenu';
 import { InstallButton } from './InstallButton';
 import { useUnseenCount } from './Notifications';
 
-export type NavTab = 'register' | 'search' | 'matches' | 'priority';
+// Volunteers register people and are told about matches; reviewing and deciding happens in the authority console.
+export type NavTab = 'register' | 'search' | 'notifications';
 
 const navItems: Array<{ id: NavTab; target: ScreenId; label: string; Icon: LucideIcon }> = [
   { id: 'register', target: 'register_choose_type', label: 'Register', Icon: UserPlus },
   { id: 'search', target: 'search_records', label: 'Search', Icon: Search },
-  { id: 'matches', target: 'suggested_matches', label: 'Matches', Icon: Users },
-  { id: 'priority', target: 'priority_cases', label: 'Priority', Icon: AlertTriangle }
+  { id: 'notifications', target: 'notifications', label: 'Notifications', Icon: Bell }
 ];
 
 export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
@@ -22,7 +22,7 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
 
   return (
     <nav aria-label="Main" className="lg:hidden flex-none bg-surface border-t border-borderSlate pb-[env(safe-area-inset-bottom)]">
-      <div className="h-nav grid grid-cols-4">
+      <div className="h-nav grid grid-cols-3">
         {navItems.map(({ id, target, label, Icon }) => {
           const isActive = activeTab === id;
           return (
@@ -31,7 +31,7 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
               type="button"
               onClick={() => navigateTo(target)}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={id === 'matches' && unseen > 0 ? `${label}, ${unseen} new` : undefined}
+              aria-label={id === 'notifications' && unseen > 0 ? `${label}, ${unseen} new` : undefined}
               className={`relative min-w-0 flex flex-col items-center justify-center gap-0.5 ${
                 isActive ? 'text-terracotta' : 'text-navy-muted hover:text-navy'
               }`}
@@ -39,7 +39,7 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
               {isActive && <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-terracotta" />}
               <span className="relative">
                 <Icon className="icon" />
-                {id === 'matches' && unseen > 0 && (
+                {id === 'notifications' && unseen > 0 && (
                   <span className="absolute -top-1.5 left-3.5 min-w-[18px] h-[18px] px-1 rounded-full bg-urgent text-white text-xs font-semibold leading-[18px] text-center">
                     {unseen > 99 ? '99+' : unseen}
                   </span>
@@ -58,13 +58,10 @@ export const BottomNav: React.FC<{ activeTab: NavTab }> = ({ activeTab }) => {
  * Desktop (1024px and up): the product name, the same destinations with icons and labels,
  * notifications, then the site, the volunteer and the Switch menu at the bottom.
  */
-export const AppSidebar: React.FC<{ activeTab?: NavTab | 'notifications' }> = ({ activeTab }) => {
+export const AppSidebar: React.FC<{ activeTab?: NavTab }> = ({ activeTab }) => {
   const { navigateTo, site, volunteerName } = useApp();
   const unseen = useUnseenCount();
-  const items: Array<{ id: NavTab | 'notifications'; target: ScreenId; label: string; Icon: LucideIcon }> = [
-    ...navItems,
-    { id: 'notifications', target: 'notifications', label: 'Notifications', Icon: Bell }
-  ];
+  const items = navItems;
 
   return (
     <aside className="hidden lg:flex flex-none w-60 flex-col bg-header text-white">
